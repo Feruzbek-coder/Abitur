@@ -17,7 +17,10 @@ python manage.py migrate --settings=abitur_test.production_settings
 # 4. Static fayllarni yig'ish
 python manage.py collectstatic --noinput --settings=abitur_test.production_settings
 
-# 5. Superuser yaratish (ixtiyoriy)
+# 5. Yo'nalishlarni yaratish
+python manage.py create_subjects --settings=abitur_test.production_settings
+
+# 6. Superuser yaratish (ixtiyoriy)
 # python manage.py createsuperuser --settings=abitur_test.production_settings
 
 # 6. Gunicorn bilan serverni ishga tushirish
