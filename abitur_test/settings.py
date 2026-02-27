@@ -39,7 +39,12 @@ SECRET_KEY = "django-insecure-8=wcd9&o_d@4ehnau@g_3r)1)*@)*8xpv=*o6g0*_@&32pm1u*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'abitur-production.up.railway.app',
+    '.railway.app',
+    'localhost',
+    '127.0.0.1',
+]
 
 
 # Application definition
