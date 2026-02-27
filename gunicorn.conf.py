@@ -1,5 +1,6 @@
 # Gunicorn configuration file
-bind = "0.0.0.0:8000"
+import os
+bind = "0.0.0.0:" + os.environ.get("PORT", "8000")
 workers = 3
 worker_class = "sync"
 worker_connections = 1000
