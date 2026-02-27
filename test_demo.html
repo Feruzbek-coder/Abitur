@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abitur Test - Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .question {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .options {
+            margin: 20px 0;
+        }
+        .option {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background: #e0e0e0;
+        }
+        .option.selected {
+            background: #4caf50;
+            color: white;
+            border-color: #45a049;
+        }
+        .btn {
+            background: #2196f3;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #1976d2;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            background: #4caf50;
+            color: white;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Abitur Test Demo</h1>
+            <p>API test qilish uchun interaktiv sahifa</p>
+        </div>
+
+        <div id="controls">
+            <button class="btn" onclick="startTest()">🚀 Test Boshlash</button>
+            <button class="btn" onclick="checkServer()">🔍 Server Tekshirish</button>
+        </div>
+
+        <div id="status"></div>
+        <div id="test-area" style="display: none;"></div>
+        <div id="result-area" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let currentTest = null;
+        let selectedAnswer = null;
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function checkServer() {
+            showStatus('🔍 Server tekshirilmoqda...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/start/1/`);
+                if (response.ok) {
+                    showStatus('✅ Server ishlayapti! Test boshlashingiz mumkin.', 'success');
+                } else {
+                    showStatus(`❌ Server xatolik berdi: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Server bilan bog'lanib bo'lmadi!<br>
+                            💡 Serverni ishga tushiring:<br>
+                            <code>cd C:\\Abitur\\abitur_test</code><br>
+                            <code>C:/Abitur/.venv/Scripts/python.exe manage.py runserver</code>`, 'error');
+            }
+        }
+
+        async function startTest() {
+            showStatus('🚀 Test boshlanmoqda...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/start/1/`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                currentTest = data;
+                
+                showStatus('✅ Test muvaffaqiyatli boshlandi!', 'success');
+                displayQuestion(data);
+                
+            } catch (error) {
+                showStatus(`❌ Test boshlab bo'lmadi: ${error.message}`, 'error');
+            }
+        }
+
+        function displayQuestion(data) {
+            const testArea = document.getElementById('test-area');
+            const options = data.options || {};
+            
+            let optionsHtml = '';
+            Object.entries(options).forEach(([key, value]) => {
+                optionsHtml += `
+                    <div class="option" onclick="selectOption('${key}', this)">
+                        <strong>${key})</strong> ${value}
+                    </div>
+                `;
+            });
+
+            testArea.innerHTML = `
+                <div class="question">
+                    <h3>❓ ${data.text}</h3>
+                </div>
+                <div class="options">
+                    ${optionsHtml}
+                </div>
+                <button class="btn" onclick="submitAnswer()" id="submitBtn" disabled>
+                    📤 Javob Yuborish
+                </button>
+                <button class="btn" onclick="resetTest()">🔄 Test Reset</button>
+            `;
+            
+            testArea.style.display = 'block';
+        }
+
+        function selectOption(answer, element) {
+            // Oldingi tanlovni olib tashlash
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Yangi tanlovni belgilash
+            element.classList.add('selected');
+            selectedAnswer = answer;
+            
+            // Submit tugmasini yoqish
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        async function submitAnswer() {
+            if (!selectedAnswer || !currentTest) {
+                showStatus('❌ Avval javob tanlang!', 'error');
+                return;
+            }
+
+            showStatus('📤 Javob yuborilmoqda...', 'info');
+
+            try {
+                const payload = {
+                    attempt_id: currentTest.attempt_id,
+                    question_id: currentTest.question_id,
+                    chosen: selectedAnswer,
+                    time_taken: 10
+                };
+
+                const response = await fetch(`${API_BASE}/submit/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.finished) {
+                    showTestResult(data.score);
+                } else {
+                    showStatus('✅ Javob qabul qilindi! Keyingi savol...', 'success');
+                    currentTest = data;
+                    selectedAnswer = null;
+                    displayQuestion(data);
+                }
+
+            } catch (error) {
+                showStatus(`❌ Javob yuborib bo'lmadi: ${error.message}`, 'error');
+            }
+        }
+
+        function showTestResult(score) {
+            const resultArea = document.getElementById('result-area');
+            resultArea.innerHTML = `
+                <div class="score">
+                    🎉 Test Yakunlandi!<br>
+                    Sizning balingiz: ${score}
+                </div>
+                <button class="btn" onclick="resetTest()">🔄 Yangi Test</button>
+            `;
+            resultArea.style.display = 'block';
+            document.getElementById('test-area').style.display = 'none';
+            showStatus('🏁 Test muvaffaqiyatli yakunlandi!', 'success');
+        }
+
+        function resetTest() {
+            currentTest = null;
+            selectedAnswer = null;
+            document.getElementById('test-area').style.display = 'none';
+            document.getElementById('result-area').style.display = 'none';
+            showStatus('Test reset qilindi. Yangi test boshlashingiz mumkin.', 'info');
+        }
+
+        // Sahifa yuklanganda server tekshirish
+        window.onload = function() {
+            showStatus('👋 Xush kelibsiz! Server holatini tekshiring.', 'info');
+        };
+    </script>
+</body>
+</html>

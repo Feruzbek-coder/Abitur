@@ -1,0 +1,1 @@
+# Bu fayl Django management modulini belgilaydi

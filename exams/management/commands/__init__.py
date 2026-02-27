@@ -1,0 +1,1 @@
+# Bu fayl Django commands modulini belgilaydi

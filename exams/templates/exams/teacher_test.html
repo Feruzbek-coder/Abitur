@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attestatsiya - {{ subject.display_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #1a3a6e, #1565c0); min-height: 100vh; font-family: 'Inter', sans-serif; }
+        .test-container { background: white; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.25); margin: 2rem auto; overflow: hidden; }
+        .test-header { background: linear-gradient(45deg, #1a3a6e, #1565c0); color: white; padding: 25px 30px; }
+        .test-header h2 { font-size: 1.6rem; font-weight: 800; margin: 0; }
+        .question-card { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        .question-text { font-size: 1.15rem; font-weight: 600; color: #1a3a6e; margin-bottom: 20px; line-height: 1.6; }
+        .option {
+            background: white; border: 2px solid #dee2e6; border-radius: 10px;
+            padding: 14px 18px; margin: 8px 0; cursor: pointer;
+            transition: all 0.25s ease; display: flex; align-items: center;
+            gap: 12px; font-size: 1rem;
+        }
+        .option:hover { background: #e3f2fd; border-color: #1565c0; transform: translateX(4px); }
+        .option.selected { background: #1565c0; color: white; border-color: #0d47a1; }
+        .option-label {
+            font-weight: 700; min-width: 28px; height: 28px; border-radius: 50%;
+            background: #e9ecef; color: #495057;
+            display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .option.selected .option-label { background: rgba(255,255,255,0.25); color: white; }
+        .progress-bar { background: linear-gradient(45deg, #1565c0, #42a5f5); border-radius: 4px; transition: width 0.4s ease; }
+        .timer { font-size: 1.3rem; font-weight: 700; color: #dc3545; }
+        .btn-nav { border-radius: 25px; padding: 10px 28px; font-weight: 600; }
+        .btn-start {
+            background: linear-gradient(45deg, #1565c0, #42a5f5); color: white; border: none;
+            border-radius: 25px; padding: 15px 40px; font-size: 1.1rem; font-weight: 700;
+            width: 100%; transition: all 0.3s; cursor: pointer;
+        }
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(21,101,192,0.4); color: white; }
+        .result-icon { font-size: 5rem; }
+        .stat-box { background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; }
+        .stat-box .num { font-size: 2rem; font-weight: 800; }
+        #error-box { display: none; }
+    </style>
+</head>
+<body>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <div class="test-container">
+                <div class="test-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 opacity-75 small">
+                                <i class="fas fa-chalkboard-teacher me-1"></i> O'qituvchilar Attestatsiyasi
+                            </p>
+                            <h2><i class="fas fa-book-open me-2"></i>{{ subject.display_name }}</h2>
+                        </div>
+                        <a href="/teacher-attestation/" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Orqaga
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <!-- Xato xabari -->
+                    <div id="error-box" class="alert alert-danger"></div>
+
+                    <!-- Boshlash qismi -->
+                    <div id="start-section">
+                        <div class="text-center py-3">
+                            <div style="font-size:5rem;">&#128218;</div>
+                            <h4 class="fw-bold mt-3 mb-4" style="color:#1a3a6e">Attestatsiya tayyor!</h4>
+                            <div class="row g-3 mb-4">
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="num text-primary" id="stat-count">{{ test_count }}</div>
+                                        <small class="text-muted">Savollar</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="num text-warning">45</div>
+                                        <small class="text-muted">Daqiqa</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="num text-success">70%</div>
+                                        <small class="text-muted">O'tish bali</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info text-start">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Har bir savolda 4 ta variant berilgan. Test boshlanganidan keyin vaqt hisoblanadi.
+                            </div>
+                            <button onclick="startTest()" class="btn-start">
+                                <i class="fas fa-play me-2"></i>Attestatsiyani Boshlash
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Test qismi -->
+                    <div id="test-section" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="timer">
+                                <i class="fas fa-clock me-1"></i>
+                                <span id="timer-display">45:00</span>
+                            </span>
+                            <span class="text-muted fw-semibold">
+                                Savol <span id="q-num">1</span> / <span id="q-total">{{ test_count }}</span>
+                            </span>
+                        </div>
+                        <div class="progress mb-4" style="height:8px;border-radius:4px;">
+                            <div class="progress-bar" id="prog-bar" style="width:0%"></div>
+                        </div>
+                        <div id="question-container" class="question-card">
+                            <div class="question-text" id="q-text"></div>
+                            <div id="options-container"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-3">
+                            <button id="prev-btn" onclick="prevQ()" class="btn btn-outline-secondary btn-nav" disabled>
+                                <i class="fas fa-chevron-left"></i> Oldingi
+                            </button>
+                            <button id="next-btn" onclick="nextQ()" class="btn btn-primary btn-nav">
+                                Keyingi <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button id="finish-btn" onclick="finishTest()" class="btn btn-success btn-nav" style="display:none;">
+                                <i class="fas fa-check me-1"></i>Yakunlash
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Natija qismi -->
+                    <div id="result-section" style="display:none;">
+                        <div class="text-center py-4">
+                            <div id="result-icon" class="result-icon mb-3">&#127942;</div>
+                            <h3 id="result-title" class="fw-bold" style="color:#1a3a6e"></h3>
+                            <p id="result-sub" class="text-muted mb-4"></p>
+                            <div class="row g-3 mb-4">
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="num text-success" id="r-correct">-</div>
+                                        <small class="text-muted">To'g'ri</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="num text-danger" id="r-wrong">-</div>
+                                        <small class="text-muted">Noto'g'ri</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="num text-primary" id="r-pct">-</div>
+                                        <small class="text-muted">Foiz</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="/teacher-attestation/" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-list me-1"></i>Boshqa fan
+                            </a>
+                            <button onclick="location.reload()" class="btn btn-primary">
+                                <i class="fas fa-redo me-1"></i>Qayta topshirish
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    var SUBJECT_ID = {{ subject.id }};
+    var TEST_COUNT = {{ test_count }};
+    var questions = [];
+    var answers = {};
+    var currentIdx = 0;
+    var timerInterval = null;
+    var secondsLeft = 45 * 60;
+
+    function showError(msg) {
+        var el = document.getElementById('error-box');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    function startTest() {
+        var btn = document.querySelector('.btn-start');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Yuklanmoqda...';
+
+        fetch('/api/teacher-start/' + SUBJECT_ID + '/')
+            .then(function(resp) {
+                if (!resp.ok) {
+                    return resp.text().then(function(t) {
+                        throw new Error('Server xatosi ' + resp.status + ': ' + t.substring(0, 100));
+                    });
+                }
+                return resp.json();
+            })
+            .then(function(data) {
+                if (data.error) {
+                    showError(data.error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play me-2"></i>Attestatsiyani Boshlash';
+                    return;
+                }
+                questions = data.questions;
+                document.getElementById('q-total').textContent = questions.length;
+                document.getElementById('stat-count').textContent = questions.length;
+                document.getElementById('start-section').style.display = 'none';
+                document.getElementById('test-section').style.display = 'block';
+                renderQuestion(0);
+                startTimer();
+            })
+            .catch(function(err) {
+                showError('Xato: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-play me-2"></i>Attestatsiyani Boshlash';
+            });
+    }
+
+    function renderQuestion(idx) {
+        currentIdx = idx;
+        var q = questions[idx];
+        document.getElementById('q-num').textContent = idx + 1;
+        document.getElementById('q-text').textContent = (idx + 1) + '. ' + q.text;
+        var opts = document.getElementById('options-container');
+        opts.innerHTML = '';
+        ['A', 'B', 'C', 'D'].forEach(function(key) {
+            if (!q.options[key]) return;
+            var div = document.createElement('div');
+            div.className = 'option' + (answers[q.id] === key ? ' selected' : '');
+
+            var labelSpan = document.createElement('span');
+            labelSpan.className = 'option-label';
+            labelSpan.textContent = key;
+
+            var textSpan = document.createElement('span');
+            textSpan.textContent = q.options[key];
+
+            div.appendChild(labelSpan);
+            div.appendChild(textSpan);
+
+            (function(qId, k, el) {
+                el.onclick = function() { selectAnswer(qId, k, el); };
+            })(q.id, key, div);
+
+            opts.appendChild(div);
+        });
+        var prog = ((idx + 1) / questions.length) * 100;
+        document.getElementById('prog-bar').style.width = prog + '%';
+        document.getElementById('prev-btn').disabled = idx === 0;
+        var isLast = idx === questions.length - 1;
+        document.getElementById('next-btn').style.display = isLast ? 'none' : 'inline-block';
+        document.getElementById('finish-btn').style.display = isLast ? 'inline-block' : 'none';
+    }
+
+    function selectAnswer(qId, key, el) {
+        answers[qId] = key;
+        var allOpts = document.querySelectorAll('.option');
+        for (var i = 0; i < allOpts.length; i++) {
+            allOpts[i].classList.remove('selected');
+        }
+        el.classList.add('selected');
+    }
+
+    function prevQ() { if (currentIdx > 0) renderQuestion(currentIdx - 1); }
+    function nextQ() { if (currentIdx < questions.length - 1) renderQuestion(currentIdx + 1); }
+
+    function startTimer() {
+        timerInterval = setInterval(function() {
+            secondsLeft--;
+            var m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+            var s = (secondsLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').textContent = m + ':' + s;
+            if (secondsLeft <= 0) { clearInterval(timerInterval); finishTest(); }
+            if (secondsLeft <= 300) document.querySelector('.timer').style.color = '#dc3545';
+        }, 1000);
+    }
+
+    function finishTest() {
+        clearInterval(timerInterval);
+        var correct = 0, wrong = 0;
+        questions.forEach(function(q) {
+            if (answers[q.id] === q.correct) correct++;
+            else wrong++;
+        });
+        var pct = Math.round((correct / questions.length) * 100);
+        document.getElementById('test-section').style.display = 'none';
+        document.getElementById('result-section').style.display = 'block';
+        document.getElementById('r-correct').textContent = correct;
+        document.getElementById('r-wrong').textContent = wrong;
+        document.getElementById('r-pct').textContent = pct + '%';
+        var titleEl = document.getElementById('result-title');
+        if (pct >= 70) {
+            document.getElementById('result-icon').textContent = '\u{1F3C6}';
+            titleEl.style.color = '#1a3a6e';
+            titleEl.textContent = "Tabriklaymiz! Attestatsiyadan o'tdingiz!";
+            document.getElementById('result-sub').textContent = correct + " ta to'g'ri javob - " + pct + "% natija. Zo'r!";
+        } else {
+            document.getElementById('result-icon').textContent = '\u{1F4D6}';
+            titleEl.style.color = '#dc3545';
+            titleEl.textContent = "Attestatsiyadan o'tolmadingiz";
+            document.getElementById('result-sub').textContent = correct + " ta to'g'ri javob - " + pct + "%. O'tish bali 70%. Yana urinib ko'ring!";
+        }
+    }
+</script>
+</body>
+</html>

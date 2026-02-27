@@ -1,0 +1,199 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block extra_css %}
+<style>
+    .news-detail-hero {
+        background: linear-gradient(135deg, #b8c7ff 0%, #d7c9ff 100%);
+        padding: 40px 0;
+        margin-bottom: 40px;
+    }
+    .news-detail-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin-bottom: 40px;
+    }
+    .news-image {
+        width: 100%;
+        max-height: 500px;
+        object-fit: cover;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+    .news-meta {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+    .news-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #333;
+    }
+    .news-content p {
+        margin-bottom: 20px;
+    }
+    .category-badge {
+        background: linear-gradient(45deg, #b8c7ff, #d7c9ff);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+    .related-news-card {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        margin-bottom: 20px;
+    }
+    .related-news-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .related-news-card img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+    .share-buttons {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 2px solid #eee;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="news-detail-hero">
+    <div class="container">
+        <div class="text-center text-white">
+            {% if news.category %}
+                <span class="category-badge">{{ news.category.name }}</span>
+            {% endif %}
+            <h1 class="display-4 fw-bold mb-3">{{ news.title }}</h1>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="news-detail-content">
+                <!-- Meta ma'lumotlar -->
+                <div class="news-meta">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <i class="fas fa-user text-primary"></i>
+                            <div class="mt-2">
+                                <strong>Muallif:</strong><br>
+                                {{ news.author.get_full_name|default:news.author.username }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-calendar text-primary"></i>
+                            <div class="mt-2">
+                                <strong>Sana:</strong><br>
+                                {{ news.published_at|date:"d F Y" }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-eye text-primary"></i>
+                            <div class="mt-2">
+                                <strong>Ko'rishlar:</strong><br>
+                                {{ news.views_count }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rasm -->
+                {% if news.image %}
+                    <img src="{{ news.image }}" alt="{{ news.title }}" class="news-image">
+                {% endif %}
+
+                <!-- Qisqacha -->
+                {% if news.excerpt %}
+                <div class="alert alert-info">
+                    <strong><i class="fas fa-info-circle"></i> Qisqacha:</strong>
+                    <p class="mb-0 mt-2">{{ news.excerpt }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Asosiy matn -->
+                <div class="news-content">
+                    {{ news.content|linebreaks }}
+                </div>
+
+                <!-- Ulashish tugmalari -->
+                <div class="share-buttons text-center">
+                    <h5 class="mb-3">Ulashish:</h5>
+                    <a href="https://t.me/share/url?url={{ request.build_absolute_uri }}&text={{ news.title }}" 
+                       target="_blank" class="btn btn-info btn-lg me-2">
+                        <i class="fab fa-telegram"></i> Telegram
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                       target="_blank" class="btn btn-primary btn-lg me-2">
+                        <i class="fab fa-facebook"></i> Facebook
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ news.title }}" 
+                       target="_blank" class="btn btn-info btn-lg">
+                        <i class="fab fa-twitter"></i> Twitter
+                    </a>
+                </div>
+            </div>
+
+            <!-- O'xshash yangiliklar -->
+            {% if related_news %}
+            <div class="mt-5">
+                <h3 class="mb-4">
+                    <i class="fas fa-newspaper text-primary"></i>
+                    O'xshash Yangiliklar
+                </h3>
+                <div class="row">
+                    {% for item in related_news %}
+                    <div class="col-md-4">
+                        <div class="related-news-card">
+                            <a href="{% url 'exams:news_detail' item.slug %}">
+                                {% if item.image %}
+                                    <img src="{{ item.image }}" alt="{{ item.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x150/d7c9ff/ffffff?text=Yangilik" alt="{{ item.title }}">
+                                {% endif %}
+                            </a>
+                            <div class="p-3">
+                                <h6 class="mb-2">
+                                    <a href="{% url 'exams:news_detail' item.slug %}" class="text-dark text-decoration-none">
+                                        {{ item.title|truncatewords:10 }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ item.published_at|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Ortga qaytish -->
+            <div class="text-center mt-4">
+                <a href="{% url 'exams:news_list' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Barcha yangiliklarga qaytish
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="height: 50px;"></div>
+{% endblock %}

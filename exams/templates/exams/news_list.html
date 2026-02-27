@@ -1,0 +1,204 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block extra_css %}
+<style>
+    .news-hero {
+        background: linear-gradient(135deg, #b8c7ff 0%, #d7c9ff 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 40px;
+    }
+    .featured-news {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        margin-bottom: 40px;
+    }
+    .featured-news img {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+    }
+    .news-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        margin-bottom: 30px;
+        height: 100%;
+    }
+    .news-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+    .news-card img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+    .news-card-body {
+        padding: 20px;
+    }
+    .category-badge {
+        background: linear-gradient(45deg, #b8c7ff, #d7c9ff);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+    .news-meta {
+        color: #999;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    .category-filter {
+        margin-bottom: 30px;
+    }
+    .category-btn {
+        margin: 5px;
+        border-radius: 25px;
+        padding: 8px 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="news-hero">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-2">
+            <i class="fas fa-newspaper"></i> Yangiliklar
+        </h1>
+        <p class="lead">Eng so'nggi yangiliklar va maqolalar</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Kategoriya filtri -->
+    <div class="category-filter text-center">
+        <a href="{% url 'exams:news_list' %}" class="btn {% if not selected_category %}btn-primary{% else %}btn-outline-primary{% endif %} category-btn">
+            <i class="fas fa-th"></i> Barchasi
+        </a>
+        {% for category in categories %}
+            <a href="?category={{ category.slug }}" class="btn {% if selected_category == category %}btn-primary{% else %}btn-outline-primary{% endif %} category-btn">
+                {{ category.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Asosiy yangilik -->
+    {% if featured_news and not selected_category %}
+    <div class="featured-news">
+        <div class="row g-0">
+            <div class="col-md-6">
+                {% if featured_news.image %}
+                    <img src="{{ featured_news.image }}" alt="{{ featured_news.title }}">
+                {% else %}
+                    <img src="https://via.placeholder.com/600x400/b8c7ff/ffffff?text=Asosiy+Yangilik" alt="{{ featured_news.title }}">
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <div class="p-5">
+                    {% if featured_news.category %}
+                        <span class="category-badge">{{ featured_news.category.name }}</span>
+                    {% endif %}
+                    <h2 class="mb-3">{{ featured_news.title }}</h2>
+                    <p class="text-muted mb-3">{{ featured_news.excerpt|truncatewords:30 }}</p>
+                    <div class="news-meta mb-3">
+                        <i class="fas fa-user"></i> {{ featured_news.author.get_full_name|default:featured_news.author.username }}
+                        <span class="mx-2">|</span>
+                        <i class="fas fa-calendar"></i> {{ featured_news.published_at|date:"d.m.Y" }}
+                        <span class="mx-2">|</span>
+                        <i class="fas fa-eye"></i> {{ featured_news.views_count }}
+                    </div>
+                    <a href="{% url 'exams:news_detail' featured_news.slug %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-arrow-right"></i> Batafsil o'qish
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Yangiliklar ro'yxati -->
+    <div class="row">
+        {% for item in news %}
+        <div class="col-lg-4 col-md-6">
+            <div class="news-card">
+                <a href="{% url 'exams:news_detail' item.slug %}">
+                    {% if item.image %}
+                        <img src="{{ item.image }}" alt="{{ item.title }}">
+                    {% else %}
+                        <img src="https://via.placeholder.com/400x200/d7c9ff/ffffff?text={{ item.category.name|default:'Yangilik' }}" alt="{{ item.title }}">
+                    {% endif %}
+                </a>
+                <div class="news-card-body">
+                    {% if item.category %}
+                        <span class="category-badge">{{ item.category.name }}</span>
+                    {% endif %}
+                    <h5 class="mb-2">
+                        <a href="{% url 'exams:news_detail' item.slug %}" class="text-dark text-decoration-none">
+                            {{ item.title }}
+                        </a>
+                    </h5>
+                    <p class="text-muted small mb-3">{{ item.excerpt|truncatewords:15 }}</p>
+                    <div class="news-meta small">
+                        <i class="fas fa-calendar"></i> {{ item.published_at|date:"d.m.Y" }}
+                        <span class="mx-2">|</span>
+                        <i class="fas fa-eye"></i> {{ item.views_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                <h4>Yangiliklar topilmadi</h4>
+                <p class="mb-0">Hozircha bu kategoriyada yangilik yo'q.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginatsiya -->
+    {% if news.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if news.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ news.previous_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for num in news.paginator.page_range %}
+                {% if news.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if news.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ news.next_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<div style="height: 50px;"></div>
+{% endblock %}

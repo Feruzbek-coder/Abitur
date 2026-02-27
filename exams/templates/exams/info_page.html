@@ -1,0 +1,138 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-hero {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9)),
+                    url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200') center/cover;
+        color: white;
+        padding: 100px 0 80px;
+        margin-top: -20px;
+    }
+    .info-content {
+        background: white;
+        border-radius: 20px;
+        padding: 50px;
+        margin-top: -50px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        min-height: 400px;
+    }
+    .coming-soon-badge {
+        background: linear-gradient(45deg, #b8c7ff, #d7c9ff);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 30px;
+        display: inline-block;
+        font-weight: 600;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(184, 199, 255, 0.4);
+    }
+    .info-icon {
+        font-size: 80px;
+        background: linear-gradient(135deg, #b8c7ff, #d7c9ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 30px;
+    }
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 30px 0;
+    }
+    .feature-list li {
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 18px;
+    }
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+    .feature-list i {
+        color: #9aaeff;
+        margin-right: 15px;
+        font-size: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="info-hero">
+    <div class="container text-center">
+        <h1 class="display-3 fw-bold mb-3">{{ page_title }}</h1>
+        <p class="lead fs-4">Ma'lumotlar tez orada yangilanadi</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="info-content">
+        <div class="text-center">
+            <div class="coming-soon-badge">
+                <i class="fas fa-clock"></i> Tez orada
+            </div>
+            
+            <div class="info-icon">
+                {% if 'Oliygoh' in page_title %}
+                    <i class="fas fa-university"></i>
+                {% elif 'Qabul' in page_title %}
+                    <i class="fas fa-graduation-cap"></i>
+                {% elif 'Shtab' in page_title %}
+                    <i class="fas fa-users"></i>
+                {% endif %}
+            </div>
+            
+            <h2 class="mb-4">{{ page_title }}</h2>
+            <p class="text-muted lead mb-5">{{ description }}</p>
+            
+            <div class="row mt-5">
+                <div class="col-md-8 offset-md-2">
+                    {% if 'Oliygoh' in page_title %}
+                    <ul class="feature-list text-start">
+                        <li><i class="fas fa-check-circle"></i> O'zbekistondagi barcha oliy o'quv yurtlari ro'yxati</li>
+                        <li><i class="fas fa-check-circle"></i> Har bir OTM haqida batafsil ma'lumot</li>
+                        <li><i class="fas fa-check-circle"></i> Yo'nalishlar va qabul kvotalari</li>
+                        <li><i class="fas fa-check-circle"></i> O'tgan yillar statistikasi</li>
+                        <li><i class="fas fa-check-circle"></i> Kontakt ma'lumotlari va manzillar</li>
+                    </ul>
+                    {% elif 'Qabul' in page_title %}
+                    <ul class="feature-list text-start">
+                        <li><i class="fas fa-check-circle"></i> 2026-yil qabul jarayoni tafsilotlari</li>
+                        <li><i class="fas fa-check-circle"></i> Muhim sanalar va muddatlar</li>
+                        <li><i class="fas fa-check-circle"></i> Hujjat topshirish tartibi</li>
+                        <li><i class="fas fa-check-circle"></i> Grant va to'lov-kontrakt shartlari</li>
+                        <li><i class="fas fa-check-circle"></i> Imtiyozlar va qo'shimcha balllar</li>
+                    </ul>
+                    {% elif 'Shtab' in page_title %}
+                    <ul class="feature-list text-start">
+                        <li><i class="fas fa-check-circle"></i> O'quv markazlari va kurslar ro'yxati</li>
+                        <li><i class="fas fa-check-circle"></i> Tajribali ustozlar bilan tanishish</li>
+                        <li><i class="fas fa-check-circle"></i> Bepul maslahat va yo'riqnomalar</li>
+                        <li><i class="fas fa-check-circle"></i> Abituriyentlar jamoasi va forumlar</li>
+                        <li><i class="fas fa-check-circle"></i> Foydali resurslar va materiallar</li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-5" role="alert">
+                <i class="fas fa-info-circle"></i>
+                <strong>Administrator uchun:</strong> Ushbu sahifaga ma'lumotlarni Admin Panel orqali qo'shish mumkin.
+                Admin panelga kirish uchun <a href="/admin/" class="alert-link">bu yerni</a> bosing.
+            </div>
+
+            <div class="mt-5">
+                <a href="{% url 'exams:home' %}" class="btn btn-outline-primary btn-lg me-2">
+                    <i class="fas fa-home"></i> Bosh sahifa
+                </a>
+                <a href="{% url 'exams:dashboard' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-play-circle"></i> Test boshlash
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="height: 100px;"></div>
+{% endblock %}

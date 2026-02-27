@@ -1,0 +1,56 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">
+                        <i class="fas fa-school text-primary"></i>
+                        Maktabga Qo'shilish
+                    </h2>
+                    
+                    <div class="alert alert-info mb-4">
+                        <h4>{{ school.name }}</h4>
+                        <p class="mb-0">
+                            <i class="fas fa-map-marker-alt"></i> {{ school.region }}{% if school.district %}, {{ school.district }}{% endif %}
+                        </p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="message" class="form-label">
+                                <i class="fas fa-comment"></i> Xabar (ixtiyoriy)
+                            </label>
+                            <textarea class="form-control" id="message" name="message" rows="4"
+                                      placeholder="Maktab boshqaruvchisiga xabar yozishingiz mumkin..."></textarea>
+                            <small class="text-muted">
+                                Masalan: Sizning maktabingizda o'qishim haqida ma'lumot
+                            </small>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Eslatma:</strong> So'rovingiz maktab boshqaruvchisi tomonidan ko'rib chiqiladi. Tasdiqlangandan so'ng, siz maktab a'zosi bo'lasiz.
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane"></i> So'rov Yuborish
+                            </button>
+                            <a href="{% url 'exams:my_school' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Ortga
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

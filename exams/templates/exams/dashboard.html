@@ -1,0 +1,145 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}Dashboard - Abituriyent Test{% endblock %}
+
+{% block extra_css %}
+<style>
+    .welcome-card {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+        min-height: 180px;
+    }
+    .welcome-card .bg-image {
+        position: absolute;
+        inset: 0;
+        background-image: url('https://images.unsplash.com/photo-1562774053-701939374585?w=1200&q=80');
+        background-size: cover;
+        background-position: center 40%;
+        filter: brightness(0.45) saturate(1.1);
+    }
+    .welcome-card .card-body {
+        position: relative;
+        z-index: 1;
+        padding: 2rem 2.5rem;
+    }
+    .welcome-card h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        text-shadow:
+            -2px -2px 0 rgba(0,0,0,0.85),
+             2px -2px 0 rgba(0,0,0,0.85),
+            -2px  2px 0 rgba(0,0,0,0.85),
+             2px  2px 0 rgba(0,0,0,0.85),
+             0    0   12px rgba(0,0,0,0.7);
+    }
+    .welcome-card p {
+        font-size: 1.05rem;
+        text-shadow:
+            -1px -1px 0 rgba(0,0,0,0.9),
+             1px -1px 0 rgba(0,0,0,0.9),
+            -1px  1px 0 rgba(0,0,0,0.9),
+             1px  1px 0 rgba(0,0,0,0.9),
+             0    0   8px rgba(0,0,0,0.6);
+    }
+    .welcome-card .btn-light {
+        background: rgba(255,255,255,0.92);
+        border: none;
+        font-weight: 600;
+        border-radius: 25px;
+        padding: 10px 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .welcome-card .btn-light:hover {
+        background: white;
+        transform: translateY(-2px);
+    }
+    .uni-label {
+        position: absolute;
+        bottom: 10px;
+        right: 14px;
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.45);
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Xush kelibsiz bo'limi -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="welcome-card text-white">
+                <div class="bg-image"></div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">
+                                <i class="fas fa-user-graduate"></i>
+                                Xush kelibsiz, {{ user.first_name|default:user.username }}!
+                            </h2>
+                            <p class="mb-0">
+                                <i class="fas fa-graduation-cap"></i>
+                                Yo'nalish: <strong>{{ profile.selected_subject.display_name }}</strong>
+                            </p>
+                            {% if profile.school %}
+                                <p class="mb-0">
+                                    <i class="fas fa-school"></i>
+                                    Maktab: {{ profile.school }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'exams:profile' %}" class="btn btn-light">
+                                <i class="fas fa-edit"></i> Profilni tahrirlash
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <span class="uni-label">O'zbekiston Milliy Universiteti</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testni boshlash -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-rocket"></i> Test boshlash
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">{{ profile.selected_subject.display_name }} yo'nalishi bo'yicha test topshiring.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-grid">
+                                <a href="{% url 'exams:test_page' %}" class="btn btn-success btn-lg">
+                                    <i class="fas fa-play-circle"></i> Test Boshlash
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle"></i> Test haqida</h6>
+                                <ul class="mb-0">
+                                    <li>Test jarayoni uchun umumiy 3 soat vaqt ajratiladi</li>
+                                    <li>Javobni tanlaganingizdan keyin o'zgartirib bo'lmaydi</li>
+                                    <li>Natijalar darhol ko'rsatiladi</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

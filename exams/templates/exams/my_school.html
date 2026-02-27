@@ -1,0 +1,193 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block extra_css %}
+<style>
+    .school-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    .school-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+    .status-badge {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .role-badge {
+        background: linear-gradient(45deg, #b8c7ff, #d7c9ff);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <h1 class="mb-2">
+                        <i class="fas fa-school text-primary"></i>
+                        Mening Maktabim
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Maktab yarating yoki mavjud maktabga qo'shiling
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if managed_schools %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="fas fa-user-tie text-success"></i> Boshqaradigan Maktablarim</h3>
+            {% for manager in managed_schools %}
+            <div class="school-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-school text-primary"></i> {{ manager.school.name }}
+                            <span class="role-badge ms-2">
+                                {% if manager.role == 'founder' %}
+                                    <i class="fas fa-crown"></i> Asoschisi
+                                {% else %}
+                                    <i class="fas fa-user-tie"></i> {{ manager.role }}
+                                {% endif %}
+                            </span>
+                        </h4>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-map-marker-alt"></i> {{ manager.school.region }}
+                            {% if manager.school.district %}, {{ manager.school.district }}{% endif %}
+                        </p>
+                        <p class="mb-0">
+                            {% if manager.can_manage_members %}<span class="badge bg-success me-1">A'zolarni boshqarish</span>{% endif %}
+                            {% if manager.can_create_tests %}<span class="badge bg-info me-1">Test yaratish</span>{% endif %}
+                            {% if manager.can_print_tests %}<span class="badge bg-warning me-1">Chop etish</span>{% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{% url 'exams:school_dashboard' manager.school.id %}" class="btn btn-primary">
+                            <i class="fas fa-cog"></i> Boshqarish
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if memberships %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="fas fa-users text-info"></i> Maktablarim</h3>
+            {% for membership in memberships %}
+            <div class="school-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-school text-primary"></i> {{ membership.school.name }}
+                        </h4>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-map-marker-alt"></i> {{ membership.school.region }}
+                            {% if membership.school.district %}, {{ membership.school.district }}{% endif %}
+                        </p>
+                        <p class="mb-0">
+                            {% if membership.status == 'pending' %}
+                                <span class="status-badge bg-warning text-dark">
+                                    <i class="fas fa-clock"></i> Kutilmoqda
+                                </span>
+                            {% elif membership.status == 'approved' %}
+                                <span class="status-badge bg-success text-white">
+                                    <i class="fas fa-check-circle"></i> Tasdiqlangan
+                                </span>
+                            {% elif membership.status == 'rejected' %}
+                                <span class="status-badge bg-danger text-white">
+                                    <i class="fas fa-times-circle"></i> Rad etilgan
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        {% if membership.status == 'approved' %}
+                            <a href="{% url 'exams:school_members' membership.school.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-users"></i> O'quvchilar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h4 class="mb-3">Yangi Maktab Yaratish</h4>
+                    <p class="text-muted mb-3">
+                        O'z maktabingiz uchun profil yarating va o'quvchilarni boshqaring
+                    </p>
+                    <a href="{% url 'exams:create_school' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-plus-circle"></i> Maktab Yaratish
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if all_schools %}
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="fas fa-list text-secondary"></i> Maktablar Ro'yxati</h3>
+            <div class="table-responsive">
+                <table class="table table-hover bg-white rounded shadow-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="fas fa-school"></i> Maktab</th>
+                            <th><i class="fas fa-map-marker-alt"></i> Manzil</th>
+                            <th><i class="fas fa-users"></i> O'quvchilar</th>
+                            <th class="text-end"><i class="fas fa-cog"></i> Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for school in all_schools %}
+                        <tr>
+                            <td><strong>{{ school.name }}</strong></td>
+                            <td>{{ school.region }}{% if school.district %}, {{ school.district }}{% endif %}</td>
+                            <td><span class="badge bg-info">{{ school.get_members.count }}</span></td>
+                            <td class="text-end">
+                                {% if school.id not in joined_school_ids %}
+                                    <a href="{% url 'exams:join_school' school.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus"></i> Qo'shilish
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-success">A'zosiz</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">
+                        <i class="fas fa-school text-primary"></i>
+                        Yangi Maktab Yaratish
+                    </h2>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label"><i class="fas fa-school"></i> Maktab Nomi *</label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="Masalan: 1-sonli maktab">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="region" class="form-label"><i class="fas fa-map-marker-alt"></i> Viloyat/Shahar *</label>
+                                <select class="form-select" id="region" name="region" required>
+                                    <option value="">Tanlang...</option>
+                                    <option value="Toshkent shahar">Toshkent shahar</option>
+                                    <option value="Toshkent viloyati">Toshkent viloyati</option>
+                                    <option value="Samarqand">Samarqand</option>
+                                    <option value="Buxoro">Buxoro</option>
+                                    <option value="Andijon">Andijon</option>
+                                    <option value="Farg'ona">Farg'ona</option>
+                                    <option value="Namangan">Namangan</option>
+                                    <option value="Qashqadaryo">Qashqadaryo</option>
+                                    <option value="Surxondaryo">Surxondaryo</option>
+                                    <option value="Jizzax">Jizzax</option>
+                                    <option value="Sirdaryo">Sirdaryo</option>
+                                    <option value="Xorazm">Xorazm</option>
+                                    <option value="Navoiy">Navoiy</option>
+                                    <option value="Qoraqalpog'iston">Qoraqalpog'iston</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="district" class="form-label"><i class="fas fa-map"></i> Tuman/Shahar</label>
+                                <input type="text" class="form-control" id="district" name="district"
+                                       placeholder="Masalan: Chilonzor tumani">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="school_number" class="form-label"><i class="fas fa-hashtag"></i> Maktab Raqami</label>
+                            <input type="text" class="form-control" id="school_number" name="school_number"
+                                   placeholder="Masalan: 1">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label"><i class="fas fa-location-arrow"></i> Manzil</label>
+                            <textarea class="form-control" id="address" name="address" rows="2"
+                                      placeholder="To'liq manzil"></textarea>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="description" class="form-label"><i class="fas fa-info-circle"></i> Tavsif</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="Maktab haqida qisqacha ma'lumot"></textarea>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Eslatma:</strong> Maktabni yaratganingizdan so'ng, siz avtomatik ravishda uning boshqaruvchisi bo'lasiz va o'quvchilarni qo'shish, test yaratish va chop etish huquqiga ega bo'lasiz.
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle"></i> Maktab Yaratish
+                            </button>
+                            <a href="{% url 'exams:my_school' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Ortga
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body py-4">
+                    <h1 class="mb-2">
+                        <i class="fas fa-users text-primary"></i>
+                        {{ school.name }} - O'quvchilar
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Jami: {{ members.count }} ta o'quvchi
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if members %}
+    <div class="row">
+        <div class="col-12">
+            <div class="table-responsive">
+                <table class="table table-hover bg-white rounded shadow-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th><i class="fas fa-user"></i> F.I.O</th>
+                            <th><i class="fas fa-envelope"></i> Email</th>
+                            <th><i class="fas fa-calendar"></i> Qo'shildi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>
+                            </td>
+                            <td>{{ member.user.email|default:"-" }}</td>
+                            <td>{{ member.requested_at|date:"d.m.Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                <h4>Hozircha o'quvchi yo'q</h4>
+                <p class="mb-0">Maktabga qo'shilish so'rovlari tasdiqlanganda, ular bu yerda ko'rinadi.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-4">
+        {% if is_manager %}
+            <a href="{% url 'exams:school_dashboard' school.id %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Boshqaruv paneliga qaytish
+            </a>
+        {% else %}
+            <a href="{% url 'exams:my_school' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Ortga
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

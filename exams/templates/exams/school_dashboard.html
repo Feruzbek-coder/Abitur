@@ -1,0 +1,203 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}{{ title }} - Abituriyent Test{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #b8c7ff 0%, #d7c9ff 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .request-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        border-left: 4px solid #b8c7ff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .member-card {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .test-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-top: 4px solid #8ee89a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body py-4">
+                    <h1 class="mb-2">
+                        <i class="fas fa-school text-primary"></i>
+                        {{ school.name }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-map-marker-alt"></i> {{ school.region }}{% if school.district %}, {{ school.district }}{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistika -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-number">{{ pending_requests.count }}</div>
+                <div>Kutilayotgan So'rovlar</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-number">{{ approved_members.count }}</div>
+                <div>Tasdiqlangan O'quvchilar</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-number">{{ school_tests.count }}</div>
+                <div>Yaratilgan Testlar</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kutilayotgan so'rovlar -->
+    {% if pending_requests %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="fas fa-clock text-warning"></i> Kutilayotgan So'rovlar</h3>
+            {% for request in pending_requests %}
+            <div class="request-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-1">
+                            <i class="fas fa-user"></i> {{ request.user.get_full_name|default:request.user.username }}
+                        </h5>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-calendar"></i> {{ request.requested_at|date:"d.m.Y H:i" }}
+                        </p>
+                        {% if request.message %}
+                        <p class="mb-0"><strong>Xabar:</strong> {{ request.message }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{% url 'exams:approve_membership' request.id %}" class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-check"></i> Tasdiqlash
+                        </a>
+                        <a href="{% url 'exams:reject_membership' request.id %}" class="btn btn-danger btn-sm">
+                            <i class="fas fa-times"></i> Rad etish
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Testlar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3><i class="fas fa-clipboard-list text-success"></i> Testlar</h3>
+                {% if manager.can_create_tests %}
+                <a href="{% url 'exams:create_school_test' school.id %}" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Yangi Test Yaratish
+                </a>
+                {% endif %}
+            </div>
+            
+            {% if school_tests %}
+                {% for test in school_tests %}
+                <div class="test-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-2">{{ test.title }}</h4>
+                            <p class="text-muted mb-2">{{ test.description }}</p>
+                            <p class="mb-0">
+                                <span class="badge bg-info me-1">Daraja: {{ test.level }}</span>
+                                <span class="badge bg-primary me-1">{{ test.questions.count }} ta savol</span>
+                                <span class="badge bg-warning text-dark me-1">{{ test.duration_minutes }} daqiqa</span>
+                                {% if test.is_active %}
+                                    <span class="badge bg-success">Faol</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Nofaol</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if manager.can_print_tests %}
+                            <a href="{% url 'exams:print_test' test.id %}" class="btn btn-primary btn-sm" target="_blank">
+                                <i class="fas fa-print"></i> Chop etish
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Hozircha test yaratilmagan.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- O'quvchilar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3><i class="fas fa-users text-info"></i> O'quvchilar</h3>
+                <a href="{% url 'exams:school_members' school.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-list"></i> Barchasini ko'rish
+                        </a>
+            </div>
+            
+            {% if approved_members %}
+                <div class="row">
+                    {% for member in approved_members|slice:":6" %}
+                    <div class="col-md-6 mb-2">
+                        <div class="member-card">
+                            <i class="fas fa-user-circle text-primary"></i>
+                            <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>
+                            <span class="text-muted ms-2">{{ member.requested_at|date:"d.m.Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Hozircha tasdiqlangan o'quvchi yo'q.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a href="{% url 'exams:my_school' %}" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-arrow-left"></i> Ortga
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends 'exams/base.html' %}
+
+{% block title %}Bosh sahifa - Abituriyent Test{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <h1 class="display-3 fw-bold mb-4">
+                    <i class="fas fa-graduation-cap"></i> Abituriyent Test Tizimi
+                </h1>
+                <p class="lead mb-5 px-lg-4">
+                    O'qituvchilar va Abituriyentlar uchun testlarga tayyorgarlik ko'rish o'quv platformasi
+                </p>
+                
+                {% if not user.is_authenticated %}
+                    <div class="d-flex justify-content-center gap-3 mb-5">
+                        <a href="{% url 'exams:register' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus"></i> Ro'yxatdan o'tish
+                        </a>
+                        <a href="{% url 'exams:login' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Kirish
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <!-- Yo'nalishlar bo'limi -->
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h2 class="text-white mb-3">
+                <i class="fas fa-books"></i> Test Yo'nalishlari
+            </h2>
+            <p class="text-white-50">O'zingizga mos yo'nalishni tanlang va tayyorlanishni boshlang</p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for subject in subjects %}
+        <div class="col-lg-6 col-md-6">
+            <div class="subject-card">
+                <div class="text-center">
+                    <div class="mb-3">
+                        {% if subject.name == 'physics_math' %}
+                            <i class="fas fa-calculator fa-3x text-primary"></i>
+                        {% elif subject.name == 'biology_chemistry' %}
+                            <i class="fas fa-microscope fa-3x text-success"></i>
+                        {% elif subject.name == 'languages' %}
+                            <i class="fas fa-language fa-3x text-info"></i>
+                        {% else %}
+                            <i class="fas fa-globe fa-3x text-warning"></i>
+                        {% endif %}
+                    </div>
+                    <h4 class="mb-3">{{ subject.display_name }}</h4>
+                    <p class="text-muted mb-4">{{ subject.description|default:"Bu yo'nalish bo'yicha testlar mavjud" }}</p>
+                    
+                    {% if user.is_authenticated %}
+                        {% if user.profile.selected_subject == subject %}
+                            <span class="badge bg-success mb-3">
+                                <i class="fas fa-check"></i> Tanlangan yo'nalish
+                            </span><br>
+                            <a href="{% url 'exams:dashboard' %}" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Testni boshlash
+                            </a>
+                        {% else %}
+                            <a href="{% url 'exams:profile_setup' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-hand-pointer"></i> Tanlash
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'exams:register' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus"></i> Ro'yxatdan o'ting
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Xususiyatlar bo'limi -->
+    <div class="row mt-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="text-white">
+                <i class="fas fa-star"></i> Nega bizni tanlash kerak?
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="feature-box text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-line fa-3x text-primary"></i>
+                </div>
+                <h5>Natijalarni kuzatish</h5>
+                <p class="text-muted">Har bir test natijangiz saqlanadi va taraqqiyotingizni kuzatishingiz mumkin.</p>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="feature-box text-center">
+                <div class="mb-3">
+                    <i class="fas fa-clock fa-3x text-success"></i>
+                </div>
+                <h5>Vaqtni boshqarish</h5>
+                <p class="text-muted">Har bir savol uchun vaqt hisoblanadi va tezligingizni oshirishga yordam beradi.</p>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="feature-box text-center">
+                <div class="mb-3">
+                    <i class="fas fa-trophy fa-3x text-warning"></i>
+                </div>
+                <h5>Yuqori sifat</h5>
+                <p class="text-muted">Barcha savollar malakali ustozlar tomonidan tayyorlangan va tekshirilgan.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
