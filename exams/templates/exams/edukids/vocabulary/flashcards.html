@@ -1,0 +1,171 @@
+{% extends "exams/base.html" %}
+{% block title %}{{ category.name }} - Flashcard{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; min-height: 100vh; }
+    .flashcard-container { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+    .progress-bar-custom { width: 100%; max-width: 600px; background: rgba(255,255,255,0.3); border-radius: 20px; height: 10px; margin-bottom: 30px; overflow: hidden; }
+    .progress-fill { height: 100%; background: white; border-radius: 20px; transition: width 0.5s; }
+    .card-wrapper { width: 100%; max-width: 500px; perspective: 1000px; margin-bottom: 30px; }
+    .card-inner { position: relative; width: 100%; height: 280px; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-front, .card-back {
+        position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        border-radius: 25px; padding: 30px; text-align: center;
+    }
+    .card-front { background: white; }
+    .card-back { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; transform: rotateY(180deg); }
+    .word-display { font-size: 2.5rem; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+    .pronunciation { color: #6366f1; font-style: italic; font-size: 1.1rem; }
+    .translation { font-size: 2rem; font-weight: 700; }
+    .example { font-size: 0.9rem; opacity: 0.9; font-style: italic; margin-top: 10px; }
+    .tap-hint { color: #94a3b8; font-size: 0.9rem; margin-top: 15px; }
+    .nav-btns { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .nav-btn { padding: 14px 35px; border-radius: 25px; font-weight: 600; font-size: 1.1rem; border: none; cursor: pointer; transition: all 0.3s; }
+    .btn-prev { background: rgba(255,255,255,0.2); color: white; }
+    .btn-next { background: white; color: #667eea; }
+    .btn-learned { background: #22c55e; color: white; }
+    .nav-btn:hover { transform: scale(1.05); }
+    .counter { color: rgba(255,255,255,0.8); font-size: 1rem; margin-bottom: 10px; }
+    .finished-screen { text-align: center; color: white; padding: 60px 20px; }
+    .finished-screen h2 { font-size: 2.5rem; font-weight: 900; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flashcard-container">
+    <h3 class="text-white fw-bold mb-2">🃏 {{ category.icon }} {{ category.name }}</h3>
+
+    {% if words %}
+    <!-- Progress -->
+    <div class="progress-bar-custom">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="counter" id="counter">1 / {{ words|length }}</div>
+
+    <!-- Card -->
+    <div class="card-wrapper" id="cardWrapper">
+        <div class="card-inner" id="cardInner" onclick="flipCard()">
+            <div class="card-front">
+                <div class="word-display" id="wordEnglish">{{ words.0.english }}</div>
+                {% if words.0.pronunciation %}
+                <div class="pronunciation" id="wordPron">/{{ words.0.pronunciation }}/</div>
+                {% else %}
+                <div class="pronunciation" id="wordPron"></div>
+                {% endif %}
+                <div class="tap-hint">👆 Bosing - tarjimasini ko'ring</div>
+            </div>
+            <div class="card-back">
+                <div class="translation" id="wordUzbek">{{ words.0.uzbek }}</div>
+                {% if words.0.example_sentence %}
+                <div class="example" id="wordExample">{{ words.0.example_sentence }}</div>
+                {% else %}
+                <div class="example" id="wordExample"></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="nav-btns">
+        <button class="nav-btn btn-prev" onclick="prevCard()">← Oldingi</button>
+        {% if user.is_authenticated %}
+        <button class="nav-btn btn-learned" onclick="markLearned()">✅ O'rgandim</button>
+        {% endif %}
+        <button class="nav-btn btn-next" onclick="nextCard()">Keyingi →</button>
+    </div>
+
+    <!-- Finished screen (hidden) -->
+    <div class="finished-screen" id="finishedScreen" style="display:none;">
+        <div style="font-size: 5rem;">🎉</div>
+        <h2>Tabriklaymiz!</h2>
+        <p class="lead opacity-90">Barcha {{ words|length }} so'zni ko'rdingiz</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap mt-4">
+            <button onclick="restartCards()" class="btn btn-light btn-lg">🔄 Qayta boshlash</button>
+            <a href="{% url 'edukids:vocabulary_words' category.id %}" class="btn btn-outline-light btn-lg">📋 Ro'yxatni ko'rish</a>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="finished-screen">
+        <div style="font-size: 4rem;">📭</div>
+        <h3>Bu kategoriyada so'zlar yo'q</h3>
+        <a href="{% url 'edukids:vocabulary_index' %}" class="btn btn-light mt-3">← Orqaga</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Words data -->
+<script>
+const words = [
+    {% for w in words %}
+    {
+        id: {{ w.id }},
+        english: {{ w.english|escapejs|json_script:'' }}.slice(1,-1) || "{{ w.english|escapejs }}",
+        uzbek: "{{ w.uzbek|escapejs }}",
+        pronunciation: "{{ w.pronunciation|default:''|escapejs }}",
+        example: "{{ w.example_sentence|default:''|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+let current = 0;
+let flipped = false;
+
+function updateCard() {
+    const w = words[current];
+    document.getElementById('wordEnglish').textContent = w.english;
+    document.getElementById('wordPron').textContent = w.pronunciation ? '/' + w.pronunciation + '/' : '';
+    document.getElementById('wordUzbek').textContent = w.uzbek;
+    document.getElementById('wordExample').textContent = w.example || '';
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + words.length;
+    const pct = ((current + 1) / words.length * 100).toFixed(0);
+    document.getElementById('progressFill').style.width = pct + '%';
+    // Unflip
+    document.getElementById('cardInner').classList.remove('flipped');
+    flipped = false;
+}
+
+function flipCard() {
+    flipped = !flipped;
+    document.getElementById('cardInner').classList.toggle('flipped', flipped);
+}
+
+function nextCard() {
+    if (current < words.length - 1) {
+        current++;
+        updateCard();
+    } else {
+        document.getElementById('cardWrapper').style.display = 'none';
+        document.querySelector('.nav-btns').style.display = 'none';
+        document.querySelector('.counter').style.display = 'none';
+        document.getElementById('finishedScreen').style.display = 'block';
+    }
+}
+
+function prevCard() {
+    if (current > 0) { current--; updateCard(); }
+}
+
+function restartCards() {
+    current = 0;
+    document.getElementById('cardWrapper').style.display = 'block';
+    document.querySelector('.nav-btns').style.display = 'flex';
+    document.querySelector('.counter').style.display = 'block';
+    document.getElementById('finishedScreen').style.display = 'none';
+    updateCard();
+}
+
+function markLearned() {
+    const wordId = words[current].id;
+    fetch(`/edukids/vocabulary/word/${wordId}/learned/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+    }).then(() => {
+        nextCard();
+    });
+}
+</script>
+{% endblock %}

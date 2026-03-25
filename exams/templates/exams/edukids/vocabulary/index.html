@@ -1,0 +1,56 @@
+{% extends "exams/base.html" %}
+{% block title %}Vocabulary - EduKids{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 50px 0 40px; border-radius: 0 0 30px 30px; margin-bottom: 40px; }
+    .cat-card { border-radius: 16px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.3s; cursor: pointer; }
+    .cat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+    .level-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .level-A1 { background: #dcfce7; color: #166534; }
+    .level-A2 { background: #fef3c7; color: #92400e; }
+    .level-B1 { background: #dbeafe; color: #1e40af; }
+    .level-B2 { background: #fce7f3; color: #9d174d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero text-center">
+    <div class="container">
+        <h1 class="fw-bold">📚 Vocabulary</h1>
+        <p class="lead">So'zlarni kategoriyalar bo'yicha o'rganing</p>
+        <a href="{% url 'edukids:home' %}" class="btn btn-outline-light btn-sm">← EduKids</a>
+    </div>
+</section>
+
+<div class="container">
+    {% if categories %}
+    <div class="row g-4">
+        {% for cat in categories %}
+        <div class="col-xl-3 col-md-4 col-sm-6">
+            <div class="card cat-card h-100">
+                <div class="card-body text-center p-4">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">{{ cat.icon }}</div>
+                    <h5 class="fw-bold">{{ cat.name }}</h5>
+                    <p class="text-muted small">{{ cat.name_uz }}</p>
+                    <span class="level-badge level-{{ cat.level }}">{{ cat.level }}</span>
+                    <p class="text-muted small mt-2">{{ cat.word_count }} so'z</p>
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="{% url 'edukids:vocabulary_words' cat.id %}" class="btn btn-primary btn-sm flex-fill">📋 Ko'rish</a>
+                        <a href="{% url 'edukids:vocabulary_flashcards' cat.id %}" class="btn btn-outline-primary btn-sm flex-fill">🃏 Flashcard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div style="font-size: 5rem;">📚</div>
+        <h4 class="text-white mt-3">Hozircha kategoriyalar yo'q</h4>
+        <p class="text-white-50">Admin paneldan kategoriya va so'zlar qo'shing</p>
+        <a href="/admin/edukids/vocabularycategory/add/" class="btn btn-light">+ Kategoriya qo'shish</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

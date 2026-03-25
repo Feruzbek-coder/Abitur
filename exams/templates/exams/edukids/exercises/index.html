@@ -1,0 +1,67 @@
+{% extends "exams/base.html" %}
+{% block title %}Mashqlar - EduKids{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-hero { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 50px 0 40px; border-radius: 0 0 30px 30px; margin-bottom: 30px; }
+    .type-card { border-radius: 20px; border: none; box-shadow: 0 6px 20px rgba(0,0,0,0.1); transition: transform 0.3s; cursor: pointer; }
+    .type-card:hover { transform: translateY(-5px); }
+    .big-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+    .section-card { border-radius: 20px; border: none; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero text-center">
+    <div class="container">
+        <h1 class="fw-bold">✏️ Mashqlar</h1>
+        <p class="lead">Ingliz tilini mashqlar orqali mustahkamlang</p>
+        <a href="{% url 'edukids:home' %}" class="btn btn-outline-light btn-sm">← EduKids</a>
+    </div>
+</section>
+
+<div class="container">
+    <!-- Kategoriyalar -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card section-card">
+                <div class="card-body p-4 text-center">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📖</div>
+                    <h4 class="fw-bold">Grammar Mashqlari</h4>
+                    <p class="text-muted">Grammatika qoidalarini mashq qiling</p>
+                    <div class="badge bg-primary fs-6 mb-3">{{ grammar_count }} mashq</div>
+                    <br>
+                    <a href="{% url 'edukids:grammar_exercises' %}" class="btn btn-primary px-4">Boshlash →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card section-card">
+                <div class="card-body p-4 text-center">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📚</div>
+                    <h4 class="fw-bold">Vocabulary Mashqlari</h4>
+                    <p class="text-muted">So'zlarni o'yinlar orqali o'rganing</p>
+                    <div class="badge bg-success fs-6 mb-3">{{ vocab_count }} mashq</div>
+                    <br>
+                    <a href="{% url 'edukids:vocabulary_exercises' %}" class="btn btn-success px-4">Boshlash →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mashq turlari -->
+    <h4 class="text-white fw-bold mb-3">🎮 Mashq Turlari</h4>
+    <div class="row g-3">
+        {% for et in exercise_types %}
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card type-card text-center p-3">
+                <div class="big-emoji">{{ et.icon }}</div>
+                <h6 class="fw-bold mb-1">{{ et.name }}</h6>
+                <p class="text-muted small mb-2">{{ et.description }}</p>
+                <a href="{% url 'edukids:grammar_exercises' %}?type={{ et.type }}" class="btn btn-outline-{{ et.color }} btn-sm">Ko'rish</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

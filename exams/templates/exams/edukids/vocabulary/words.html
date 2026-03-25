@@ -1,0 +1,100 @@
+{% extends "exams/base.html" %}
+{% block title %}{{ category.name }} - Vocabulary{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 0 30px; border-radius: 0 0 30px 30px; margin-bottom: 30px; }
+    .word-card { border-radius: 14px; border: none; box-shadow: 0 3px 12px rgba(0,0,0,0.08); transition: all 0.3s; }
+    .word-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.13); }
+    .word-card.learned { border-left: 4px solid #22c55e; }
+    .learn-btn { border: none; background: none; font-size: 1.2rem; cursor: pointer; }
+    .pronunciation { color: #6366f1; font-style: italic; }
+    .search-bar { border-radius: 25px; border: 2px solid #e2e8f0; padding: 10px 20px; }
+    .search-bar:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); outline: none; }
+    .filter-btn { border-radius: 20px; }
+    .filter-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero text-center">
+    <div class="container">
+        <div style="font-size: 4rem;">{{ category.icon }}</div>
+        <h1 class="fw-bold">{{ category.name }}</h1>
+        <p class="lead opacity-90">{{ category.name_uz }} • {{ words|length }} so'z</p>
+        <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <a href="{% url 'edukids:vocabulary_index' %}" class="btn btn-outline-light btn-sm">← Kategoriyalar</a>
+            <a href="{% url 'edukids:vocabulary_flashcards' category.id %}" class="btn btn-light btn-sm">🃏 Flashcard rejimi</a>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <!-- Qidiruv -->
+    <div class="mb-4">
+        <input type="text" id="searchInput" class="form-control search-bar w-100" placeholder="🔍 So'z qidiring...">
+    </div>
+
+    <!-- So'zlar -->
+    <div class="row g-3" id="wordsList">
+        {% for word in words %}
+        <div class="col-xl-3 col-md-4 col-sm-6 word-item" data-english="{{ word.english|lower }}" data-uzbek="{{ word.uzbek|lower }}">
+            <div class="card word-card h-100 {% if user_progress|default:'' %}{% if word.id|stringformat:'s' in user_progress %}learned{% endif %}{% endif %}" id="card-{{ word.id }}">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-1 fs-5">{{ word.english }}</h6>
+                            {% if word.pronunciation %}
+                            <div class="pronunciation small mb-1">/{{ word.pronunciation }}/</div>
+                            {% endif %}
+                            <p class="text-muted mb-1">{{ word.uzbek }}</p>
+                            {% if word.example_sentence %}
+                            <p class="text-muted small fst-italic mb-0">{{ word.example_sentence }}</p>
+                            {% endif %}
+                        </div>
+                        {% if user.is_authenticated %}
+                        <button class="learn-btn ms-2" onclick="markLearned({{ word.id }}, this)" title="O'rgandim">
+                            {% if user_progress and word.id in user_progress %}✅{% else %}⭕{% endif %}
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div style="font-size: 4rem;">📭</div>
+            <h5 class="text-white mt-3">Bu kategoriyada so'zlar yo'q</h5>
+            <a href="/admin/edukids/word/add/" class="btn btn-light mt-2">+ So'z qo'shish</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Qidiruv
+document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.word-item').forEach(item => {
+        const en = item.dataset.english;
+        const uz = item.dataset.uzbek;
+        item.style.display = (!q || en.includes(q) || uz.includes(q)) ? '' : 'none';
+    });
+});
+
+// So'zni o'rganilgan deb belgilash
+function markLearned(wordId, btn) {
+    fetch(`{% url 'edukids:mark_word_learned' 0 %}`.replace('0', wordId), {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            btn.textContent = '✅';
+            document.getElementById('card-' + wordId).classList.add('learned');
+        }
+    });
+}
+</script>
+{% endblock %}

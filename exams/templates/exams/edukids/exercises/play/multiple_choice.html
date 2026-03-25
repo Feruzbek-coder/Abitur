@@ -1,0 +1,154 @@
+{% extends "exams/base.html" %}
+{% block title %}{{ exercise.title }} - Test{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; min-height: 100vh; }
+    .game-wrapper { max-width: 750px; margin: 30px auto; padding: 0 15px; }
+    .main-card { background: white; border-radius: 25px; padding: 35px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .progress-bar-custom { height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 25px; }
+    .progress-fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; transition: width 0.4s; }
+    .question-num { color: #8b5cf6; font-weight: 700; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase; }
+    .question-text { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin: 10px 0 25px; line-height: 1.5; }
+    .option-btn {
+        display: block; width: 100%; text-align: left;
+        background: #f8fafc; border: 2px solid #e2e8f0;
+        border-radius: 12px; padding: 14px 20px; margin-bottom: 10px;
+        font-size: 1rem; font-weight: 500; cursor: pointer;
+        transition: all 0.25s; color: #334155;
+    }
+    .option-btn:hover { border-color: #8b5cf6; background: #f5f3ff; transform: translateX(3px); }
+    .option-btn.correct { background: #dcfce7; border-color: #22c55e; color: #166534; }
+    .option-btn.wrong { background: #fee2e2; border-color: #ef4444; color: #7f1d1d; }
+    .option-btn.disabled { pointer-events: none; }
+    .feedback { text-align: center; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 1.1rem; margin-top: 5px; display: none; }
+    .feedback.correct-fb { background: #dcfce7; color: #166534; }
+    .feedback.wrong-fb { background: #fee2e2; color: #7f1d1d; }
+    .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .score-badge { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 6px 18px; border-radius: 20px; font-weight: 700; font-size: 1rem; }
+    .results-screen { text-align: center; padding: 20px 0; }
+    .results-screen h2 { font-size: 2.5rem; font-weight: 900; color: #1e293b; }
+    .results-circle { width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px auto; font-size: 2rem; font-weight: 900; box-shadow: 0 10px 30px rgba(102,126,234,0.4); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-wrapper">
+    <h4 class="text-white fw-bold mb-3 text-center">{{ exercise.title }}</h4>
+
+    <div class="main-card" id="gameCard">
+        <div class="score-header">
+            <div class="question-num" id="questionNum">1 / {{ questions|length }}</div>
+            <div class="score-badge">Ball: <span id="scoreDisplay">0</span></div>
+        </div>
+        <div class="progress-bar-custom">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+
+        <div id="questionText" class="question-text"></div>
+        <div id="optionsContainer"></div>
+        <div class="feedback" id="feedback"></div>
+
+        <div class="text-end mt-3">
+            <button id="nextBtn" class="btn btn-primary px-4" style="display:none;" onclick="nextQuestion()">
+                Keyingi →
+            </button>
+        </div>
+    </div>
+
+    <!-- Natijalar -->
+    <div class="main-card results-screen" id="resultsCard" style="display:none;">
+        <h2>🎉 Bajarildi!</h2>
+        <div class="results-circle" id="resultCircle"></div>
+        <h4 id="resultText" class="text-muted mb-4"></h4>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <button onclick="restartGame()" class="btn btn-primary px-4">🔄 Qayta</button>
+            <a href="{% url 'edukids:exercises_index' %}" class="btn btn-outline-secondary px-4">← Mashqlar</a>
+        </div>
+    </div>
+</div>
+
+<script>
+const questions = {{ questions_json|safe }};
+let current = 0, score = 0, startTime = Date.now();
+
+function showQuestion(idx) {
+    const q = questions[idx];
+    const total = questions.length;
+    document.getElementById('questionNum').textContent = (idx + 1) + ' / ' + total;
+    document.getElementById('progressFill').style.width = ((idx / total) * 100) + '%';
+    document.getElementById('questionText').textContent = q.question_text;
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'none';
+
+    const opts = q.options || [];
+    const container = document.getElementById('optionsContainer');
+    container.innerHTML = '';
+    opts.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = (String.fromCharCode(65 + i)) + ') ' + opt;
+        btn.onclick = () => selectOption(btn, opt, q.correct_answer, q.points);
+        container.appendChild(btn);
+    });
+}
+
+function selectOption(btn, chosen, correct, pts) {
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
+    const fb = document.getElementById('feedback');
+    fb.style.display = 'block';
+    if (chosen === correct) {
+        btn.classList.add('correct');
+        fb.className = 'feedback correct-fb';
+        fb.textContent = '✅ To\'g\'ri! +' + pts + ' ball';
+        score += pts;
+        document.getElementById('scoreDisplay').textContent = score;
+    } else {
+        btn.classList.add('wrong');
+        fb.className = 'feedback wrong-fb';
+        fb.textContent = '❌ Noto\'g\'ri! To\'g\'ri javob: ' + correct;
+        // Show correct
+        document.querySelectorAll('.option-btn').forEach(b => {
+            if (b.textContent.slice(3) === correct) b.classList.add('correct');
+        });
+    }
+    document.getElementById('nextBtn').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+    current++;
+    if (current < questions.length) {
+        showQuestion(current);
+    } else {
+        showResults();
+    }
+}
+
+function showResults() {
+    document.getElementById('gameCard').style.display = 'none';
+    document.getElementById('resultsCard').style.display = 'block';
+    const total = questions.length * 10;
+    const pct = total > 0 ? Math.round(score / total * 100) : 0;
+    document.getElementById('resultCircle').innerHTML = pct + '%<br><small style="font-size:0.6rem">(' + score + '/' + total + ')</small>';
+    const msg = pct >= 80 ? '🏆 Ajoyib natija!' : pct >= 60 ? '👍 Yaxshi!' : '💪 Yana mashq qiling!';
+    document.getElementById('resultText').textContent = msg;
+    // Save result
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    fetch('{% url "edukids:exercise_submit" exercise.id %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({score: score, total: total, time_spent: timeSpent})
+    });
+}
+
+function restartGame() {
+    current = 0; score = 0; startTime = Date.now();
+    document.getElementById('scoreDisplay').textContent = 0;
+    document.getElementById('gameCard').style.display = 'block';
+    document.getElementById('resultsCard').style.display = 'none';
+    showQuestion(0);
+}
+
+if (questions.length > 0) showQuestion(0);
+</script>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "exams/base.html" %}
+{% block title %}{{ exercise.title }} - Moslashtirish{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%) !important; min-height: 100vh; }
+    .game-wrapper { max-width: 900px; margin: 30px auto; padding: 0 15px; }
+    .main-card { background: white; border-radius: 25px; padding: 35px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .score-badge { background: linear-gradient(135deg, #a18cd1, #fbc2eb); color: white; padding: 6px 18px; border-radius: 20px; font-weight: 700; }
+    .matching-columns { display: flex; gap: 20px; }
+    .column { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .match-item {
+        padding: 14px 20px; border-radius: 12px; font-weight: 600;
+        cursor: pointer; text-align: center; transition: all 0.25s;
+        border: 2px solid #e2e8f0; background: #f8fafc; user-select: none;
+    }
+    .match-item:hover { border-color: #a18cd1; background: #f5f3ff; }
+    .match-item.selected { border-color: #8b5cf6; background: #ede9fe; }
+    .match-item.matched { border-color: #22c55e; background: #dcfce7; cursor: default; }
+    .match-item.wrong { border-color: #ef4444; background: #fee2e2; }
+    .results-screen { text-align: center; padding: 20px 0; }
+    .results-circle { width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, #a18cd1, #fbc2eb); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px auto; font-size: 2rem; font-weight: 900; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-wrapper">
+    <h4 class="text-white fw-bold mb-3 text-center">{{ exercise.title }}</h4>
+
+    {% if questions %}
+    {% with q=questions.0 %}
+    <div class="main-card" id="gameCard">
+        <div class="score-header">
+            <div style="color: #8b5cf6; font-weight: 700;">So'zlarni moslashtiring 🔗</div>
+            <div class="score-badge">Mos: <span id="matchedCount">0</span></div>
+        </div>
+        <p class="text-muted mb-4">Chap tomondagi so'zni o'ng tomondagi tarjimasi bilan moslang</p>
+
+        <div class="matching-columns" id="matchingGame">
+            <div class="column" id="leftColumn"></div>
+            <div class="column" id="rightColumn"></div>
+        </div>
+
+        <div class="text-center mt-4" id="completeBtnArea" style="display:none;">
+            <button onclick="showResults()" class="btn btn-success btn-lg px-5">✅ Natijani ko'rish</button>
+        </div>
+    </div>
+
+    <div class="main-card results-screen" id="resultsCard" style="display:none;">
+        <h2 style="color:#1e293b;">🎉 Bajarildi!</h2>
+        <div class="results-circle" id="resultCircle"></div>
+        <h4 id="resultText" class="text-muted mb-4"></h4>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <button onclick="location.reload()" class="btn btn-primary px-4">🔄 Qayta</button>
+            <a href="{% url 'edukids:exercises_index' %}" class="btn btn-outline-secondary px-4">← Mashqlar</a>
+        </div>
+    </div>
+    {% endwith %}
+    {% else %}
+    <div class="main-card text-center py-5">
+        <h5>Savollar topilmadi</h5>
+        <a href="{% url 'edukids:exercises_index' %}" class="btn btn-primary mt-3">← Orqaga</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const questions = {{ questions_json|safe }};
+const q = questions[0];
+let selected = null;
+let matchedPairs = 0;
+let score = 0;
+let pairs = [];
+const startTime = Date.now();
+
+function initGame() {
+    if (!q || !q.matching_pairs) return;
+    const mp = q.matching_pairs;
+    const left = mp.left || [];
+    const right = [...(mp.right || [])];
+    // shuffle right
+    for (let i = right.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [right[i], right[j]] = [right[j], right[i]];
+    }
+    pairs = left.map((l, i) => ({left: l, right: (mp.right||[])[i]}));
+
+    const leftCol = document.getElementById('leftColumn');
+    const rightCol = document.getElementById('rightColumn');
+    leftCol.innerHTML = ''; rightCol.innerHTML = '';
+
+    left.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.textContent = item;
+        div.dataset.side = 'left';
+        div.dataset.idx = i;
+        div.onclick = () => handleClick(div, 'left', item);
+        leftCol.appendChild(div);
+    });
+    right.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.textContent = item;
+        div.dataset.side = 'right';
+        div.onclick = () => handleClick(div, 'right', item);
+        rightCol.appendChild(div);
+    });
+}
+
+function handleClick(el, side, value) {
+    if (el.classList.contains('matched')) return;
+    if (!selected) {
+        selected = {el, side, value};
+        el.classList.add('selected');
+    } else {
+        if (selected.side === side) {
+            selected.el.classList.remove('selected');
+            selected = {el, side, value};
+            el.classList.add('selected');
+            return;
+        }
+        // Check match
+        const leftVal = side === 'left' ? value : selected.value;
+        const rightVal = side === 'right' ? value : selected.value;
+        const leftEl = side === 'left' ? el : selected.el;
+        const rightEl = side === 'right' ? el : selected.el;
+        const correct = pairs.find(p => p.left === leftVal && p.right === rightVal);
+        if (correct) {
+            leftEl.classList.remove('selected'); leftEl.classList.add('matched');
+            rightEl.classList.remove('selected'); rightEl.classList.add('matched');
+            score += 10; matchedPairs++;
+            document.getElementById('matchedCount').textContent = matchedPairs;
+            if (matchedPairs >= pairs.length) {
+                document.getElementById('completeBtnArea').style.display = 'block';
+            }
+        } else {
+            leftEl.classList.add('wrong'); rightEl.classList.add('wrong');
+            setTimeout(() => {
+                leftEl.classList.remove('wrong', 'selected');
+                rightEl.classList.remove('wrong', 'selected');
+            }, 800);
+        }
+        selected = null;
+    }
+}
+
+function showResults() {
+    document.getElementById('gameCard').style.display = 'none';
+    document.getElementById('resultsCard').style.display = 'block';
+    const total = pairs.length * 10;
+    const pct = total > 0 ? Math.round(score / total * 100) : 0;
+    document.getElementById('resultCircle').innerHTML = pct + '%';
+    const msg = pct === 100 ? '🏆 Mukammal!' : pct >= 60 ? '👍 Yaxshi!' : '💪 Yana mashq!';
+    document.getElementById('resultText').textContent = msg;
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    fetch('{% url "edukids:exercise_submit" exercise.id %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({score: score, total: total, time_spent: timeSpent})
+    });
+}
+
+initGame();
+</script>
+{% endblock %}

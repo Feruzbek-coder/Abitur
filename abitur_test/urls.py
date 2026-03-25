@@ -23,4 +23,5 @@ from exams.simple_test import simple_test_page
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("exams.urls")),  # Barcha exams URL lari
+    path("edukids/", include("edukids.urls")),  # EduKids - Ingliz Tili
 ]

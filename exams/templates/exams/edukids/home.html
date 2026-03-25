@@ -1,0 +1,234 @@
+{% extends "exams/base.html" %}
+
+{% block title %}EduKids - Ingliz Tilini O'rganamiz!{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edukids-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 70px 0 50px;
+        color: white;
+        border-radius: 0 0 40px 40px;
+        margin-bottom: 40px;
+    }
+    .edukids-hero h1 { font-size: 3rem; font-weight: 900; }
+    .feature-card {
+        border-radius: 20px;
+        color: white;
+        border: none;
+        transition: transform 0.3s;
+    }
+    .feature-card:hover { transform: translateY(-6px); }
+    .feature-card .card-body { padding: 30px; }
+    .emoji-big { font-size: 3rem; margin-bottom: 10px; }
+    .stat-box {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    }
+    .stat-box h2 { font-size: 3rem; font-weight: 900; color: #667eea; }
+    .vocab-card { border-radius: 16px; transition: transform 0.3s; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .vocab-card:hover { transform: translateY(-4px); }
+    .level-badge {
+        display: inline-block; padding: 4px 12px;
+        border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+    }
+    .level-A1 { background: #dcfce7; color: #166534; }
+    .level-A2 { background: #fef3c7; color: #92400e; }
+    .level-B1 { background: #dbeafe; color: #1e40af; }
+    .level-B2 { background: #fce7f3; color: #9d174d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="edukids-hero text-center">
+    <div class="container">
+        <h1>🎓 EduKids</h1>
+        <p class="lead fs-4 mb-4">Ingliz tilini qiziqarli mashqlar va o'yinlar orqali o'rganing!</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{% url 'edukids:vocabulary_index' %}" class="btn btn-light btn-lg px-4">
+                <i class="fas fa-book-open me-2"></i>Vocabulary
+            </a>
+            <a href="{% url 'edukids:grammar_index' %}" class="btn btn-outline-light btn-lg px-4">
+                <i class="fas fa-pen me-2"></i>Grammar
+            </a>
+            <a href="{% url 'edukids:exercises_index' %}" class="btn btn-light btn-lg px-4">
+                <i class="fas fa-gamepad me-2"></i>Mashqlar
+            </a>
+            <a href="{% url 'edukids:interests_home' %}" class="btn btn-outline-light btn-lg px-4">
+                🌈 Qiziqishlar
+            </a>
+            <a href="{% url 'edukids:logic_home' %}" class="btn btn-light btn-lg px-4">
+                🧠 Mantiq
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+
+    <!-- Feature Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card feature-card h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-center">
+                    <div class="emoji-big">📚</div>
+                    <h5 class="fw-bold">Vocabulary</h5>
+                    <p class="opacity-90 small">So'zlar kategoriyalar bo'yicha, flashcardlar bilan</p>
+                    <a href="{% url 'edukids:vocabulary_index' %}" class="btn btn-light btn-sm mt-2">O'rganish →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card feature-card h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-center">
+                    <div class="emoji-big">📖</div>
+                    <h5 class="fw-bold">Grammar</h5>
+                    <p class="opacity-90 small">Grammatik qoidalar tushunarli izohlar bilan</p>
+                    <a href="{% url 'edukids:grammar_index' %}" class="btn btn-light btn-sm mt-2">O'rganish →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card feature-card h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body text-center">
+                    <div class="emoji-big">✏️</div>
+                    <h5 class="fw-bold">Grammar Mashqlari</h5>
+                    <p class="opacity-90 small">Test, fill gaps, matching va boshqa mashqlar</p>
+                    <a href="{% url 'edukids:grammar_exercises' %}" class="btn btn-light btn-sm mt-2">Bajarish →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card feature-card h-100" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <div class="card-body text-center">
+                    <div class="emoji-big">🎮</div>
+                    <h5 class="fw-bold">Vocabulary O'yinlar</h5>
+                    <p class="opacity-90 small">Word search, crossword va qiziqarli o'yinlar</p>
+                    <a href="{% url 'edukids:vocabulary_exercises' %}" class="btn btn-light btn-sm mt-2">O'ynash →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- YANGI BOLIMLAR: 9-14 YOSH -->
+    <h3 class="fw-bold mb-4 text-white">🌟 9–14 Yoshli O'quvchilar Uchun</h3>
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card feature-card h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body p-4">
+                    <div class="emoji-big">🌈</div>
+                    <h4 class="fw-bold mb-2">Qiziqishlarni Aniqlash</h4>
+                    <p class="opacity-90 mb-3">O'z qiziqishingizni bilib oling va kelajakdagi kasbingizni tanlashga yordam bering! Test orqali qaysi soha sizga mos kelishini aniqlaymiz.</p>
+                    <ul class="list-unstyled opacity-90 small mb-3">
+                        <li>✅ Fan va texnologiya</li>
+                        <li>✅ San'at va ijodiyot</li>
+                        <li>✅ Sport va jismoniy faollik</li>
+                        <li>✅ Tabiat va ekologiya</li>
+                        <li>✅ Kasbiy yo'nalish tavsiyalari</li>
+                    </ul>
+                    <a href="{% url 'edukids:interests_home' %}" class="btn btn-light fw-bold px-4">
+                        🚀 Testni Boshlash →
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card feature-card h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body p-4">
+                    <div class="emoji-big">🧠</div>
+                    <h4 class="fw-bold mb-2">Mantiqiy Fikrlash</h4>
+                    <p class="opacity-90 mb-3">Mantiqingizni oshiruvchi mashqlar va testlar bilan fikrlash qobiliyatingizni mustahkamlang. Turli darajalarda qiziqarli topshiriqlar!</p>
+                    <ul class="list-unstyled opacity-90 small mb-3">
+                        <li>🔢 Naqsh va ketma-ketlik</li>
+                        <li>🔁 Analogiya mashqlari</li>
+                        <li>➕ Matematik mantiq</li>
+                        <li>🗺️ Fazoviy fikrlash</li>
+                        <li>🔍 Xulosa chiqarish</li>
+                    </ul>
+                    <a href="{% url 'edukids:logic_home' %}" class="btn btn-light fw-bold px-4">
+                        🧩 Mashqlarni Ko'rish →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistika -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="stat-box">
+                <h2>{{ stats.vocab_count }}</h2>
+                <p class="text-muted mb-0">Vocabulary kategoriyalar</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-box">
+                <h2>{{ stats.grammar_count }}</h2>
+                <p class="text-muted mb-0">Grammar mavzular</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-box">
+                <h2>{{ stats.exercise_count }}</h2>
+                <p class="text-muted mb-0">Mashqlar</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vocabulary Kategoriyalar -->
+    {% if vocab_categories %}
+    <h3 class="fw-bold mb-3 text-white">📖 Vocabulary Kategoriyalari</h3>
+    <div class="row g-3 mb-5">
+        {% for cat in vocab_categories %}
+        <div class="col-md-3">
+            <div class="card vocab-card h-100">
+                <div class="card-body text-center p-4">
+                    <div style="font-size: 2.5rem;">{{ cat.icon }}</div>
+                    <h6 class="fw-bold mt-2">{{ cat.name }}</h6>
+                    <p class="text-muted small">{{ cat.name_uz }}</p>
+                    <span class="level-badge level-{{ cat.level }}">{{ cat.level }}</span>
+                    <p class="small text-muted mt-2">{{ cat.word_count }} so'z</p>
+                    <a href="{% url 'edukids:vocabulary_words' cat.id %}" class="btn btn-primary btn-sm w-100">Ko'rish</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="col-12 text-center mt-2">
+            <a href="{% url 'edukids:vocabulary_index' %}" class="btn btn-outline-light">Barcha kategoriyalar →</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Grammar Mavzular -->
+    {% if grammar_topics %}
+    <h3 class="fw-bold mb-3 text-white">📝 Grammar Mavzulari</h3>
+    <div class="row g-3 mb-5">
+        {% for topic in grammar_topics %}
+        <div class="col-md-3">
+            <div class="card vocab-card h-100">
+                <div class="card-body text-center p-4">
+                    <div style="font-size: 2.5rem;">{{ topic.icon }}</div>
+                    <h6 class="fw-bold mt-2">{{ topic.title }}</h6>
+                    {% if topic.title_uz %}
+                    <p class="text-muted small">{{ topic.title_uz }}</p>
+                    {% endif %}
+                    <span class="level-badge level-{{ topic.level }}">{{ topic.level }}</span>
+                    <div class="mt-3">
+                        <a href="{% url 'edukids:grammar_topic_detail' topic.id %}" class="btn btn-primary btn-sm w-100">O'qish</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="col-12 text-center mt-2">
+            <a href="{% url 'edukids:grammar_index' %}" class="btn btn-outline-light">Barcha mavzular →</a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

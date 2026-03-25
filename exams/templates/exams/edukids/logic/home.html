@@ -1,0 +1,147 @@
+{% extends "exams/base.html" %}
+{% block title %}Mantiqiy Fikrlash - EduKids{% endblock %}
+
+{% block extra_css %}
+<style>
+    .logic-hero {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        padding: 70px 0 50px; color: white;
+        border-radius: 0 0 40px 40px; margin-bottom: 40px;
+    }
+    .logic-hero h1 { font-size: 2.8rem; font-weight: 900; }
+    .ex-card {
+        border-radius: 18px; border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        overflow: hidden;
+    }
+    .ex-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.15); }
+    .difficulty-bar { display: flex; gap: 3px; }
+    .diff-dot { width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; }
+    .diff-dot.filled { background: #f5576c; }
+    .type-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .filter-btn { border-radius: 20px; border: 2px solid #e2e8f0; padding: 6px 18px; background: white; cursor: pointer; transition: all 0.2s; }
+    .filter-btn.active, .filter-btn:hover { border-color: #4facfe; background: #e6f7ff; color: #0369a1; }
+    .stat-pill { background: white; border-radius: 14px; padding: 18px 25px; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); }
+    .stat-pill h3 { font-size: 2rem; font-weight: 900; color: #4facfe; margin: 0; }
+    .result-badge { position: absolute; top: 10px; right: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="logic-hero text-center">
+    <div class="container">
+        <h1>🧠 Mantiqiy Fikrlash</h1>
+        <p class="lead fs-5 mb-2">9–14 yoshli o'quvchilar uchun mantiqiy mashqlar</p>
+        <p class="opacity-80">Naqsh topish, ketma-ketlik, analogiya va ko'proq mashqlar!</p>
+    </div>
+</section>
+
+<div class="container">
+
+    <!-- Statistika -->
+    <div class="row g-3 mb-5">
+        <div class="col-md-3 col-6">
+            <div class="stat-pill">
+                <h3>{{ difficulty_counts.1 }}</h3>
+                <p class="text-muted mb-0 small">Oson ⭐</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-pill">
+                <h3>{{ difficulty_counts.2 }}</h3>
+                <p class="text-muted mb-0 small">O'rta ⭐⭐</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-pill">
+                <h3>{{ difficulty_counts.3 }}</h3>
+                <p class="text-muted mb-0 small">Qiyin ⭐⭐⭐</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-pill">
+                <h3>{{ exercises|length }}</h3>
+                <p class="text-muted mb-0 small">Jami mashqlar</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="d-flex gap-2 flex-wrap mb-4">
+        <button class="filter-btn active" onclick="filterExercises('all', this)">📋 Barchasi</button>
+        <button class="filter-btn" onclick="filterExercises('1', this)">⭐ Oson</button>
+        <button class="filter-btn" onclick="filterExercises('2', this)">⭐⭐ O'rta</button>
+        <button class="filter-btn" onclick="filterExercises('3', this)">⭐⭐⭐ Qiyin</button>
+    </div>
+
+    <!-- Mashqlar -->
+    {% if exercises %}
+    <div class="row g-4 mb-5" id="exercises-grid">
+        {% for ex in exercises %}
+        <div class="col-xl-4 col-md-6 ex-item" data-difficulty="{{ ex.difficulty }}">
+            <div class="card ex-card h-100 position-relative">
+                {% if user_results and ex.id in user_results %}
+                <div class="result-badge">
+                    <span class="badge {% if user_results|default:ex.id and user_results.ex.id.pct >= 80 %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill">
+                        ✓ Bajarilgan
+                    </span>
+                </div>
+                {% endif %}
+                <div class="card-body p-4">
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">{{ ex.icon }}</div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="difficulty-bar">
+                            {% for i in "123" %}
+                            <div class="diff-dot {% if forloop.counter <= ex.difficulty %}filled{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                        <span class="text-muted small">
+                            {% if ex.difficulty == 1 %}Oson{% elif ex.difficulty == 2 %}O'rta{% else %}Qiyin{% endif %}
+                        </span>
+                    </div>
+                    <h5 class="fw-bold mb-2">{{ ex.title }}</h5>
+                    <p class="text-muted small mb-3">{{ ex.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="type-badge" style="background:#e6f7ff;color:#0369a1;">
+                            {{ ex.get_exercise_type_display }}
+                        </span>
+                        <span class="text-muted small">{{ ex.question_count }} savol</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0 px-4 pb-4">
+                    <a href="{% url 'edukids:logic_exercise_play' ex.id %}"
+                       class="btn w-100 fw-bold"
+                       style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:white;border:none;border-radius:10px;">
+                        🚀 Boshlash
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div style="font-size: 5rem;">🧩</div>
+        <h4 class="text-white mt-3">Hozircha mashqlar yo'q</h4>
+        <p class="text-white-50">Admin paneldan mantiqiy mashqlar qo'shing</p>
+        <a href="/admin/edukids/logicexercise/add/" class="btn btn-light">+ Mashq qo'shish</a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+function filterExercises(diff, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.ex-item').forEach(el => {
+        if (diff === 'all' || el.dataset.difficulty === diff) {
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

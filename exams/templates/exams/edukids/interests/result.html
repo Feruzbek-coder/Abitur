@@ -1,0 +1,98 @@
+{% extends "exams/base.html" %}
+{% block title %}Natija - Qiziqishlar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-hero {
+        padding: 60px 0 40px;
+        color: white;
+        border-radius: 0 0 40px 40px;
+        margin-bottom: 40px;
+        text-align: center;
+    }
+    .score-bar { height: 14px; border-radius: 8px; overflow: hidden; background: #f1f5f9; margin-bottom: 8px; }
+    .score-fill { height: 100%; border-radius: 8px; }
+    .career-chip { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 0.85rem; margin: 3px; background: #f0e6ff; color: #7C3AED; }
+    .result-card { background: white; border-radius: 20px; padding: 35px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="result-hero" style="background: linear-gradient(135deg, {% if result.top_category %}{{ result.top_category.color }}{% else %}#f093fb{% endif %} 0%, #f5576c 100%);">
+    <div class="container">
+        <div style="font-size: 5rem; margin-bottom: 20px;">
+            {% if result.top_category %}{{ result.top_category.icon }}{% else %}🌟{% endif %}
+        </div>
+        <h2 class="fw-bold mb-2">Sizning asosiy qiziqish sohangi:</h2>
+        <h1 class="fw-bold">{% if result.top_category %}{{ result.top_category.name }}{% else %}Aniqlanmadi{% endif %}</h1>
+        {% if result.age %}<p class="opacity-80 mt-2">Yosh: {{ result.age }}</p>{% endif %}
+    </div>
+</section>
+
+<div class="container">
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+    {% if result.top_category %}
+    <div class="result-card mb-4">
+        <h4 class="fw-bold mb-3">ℹ️ {{ result.top_category.name }} haqida</h4>
+        <p>{{ result.top_category.description }}</p>
+        {% with careers=result.top_category.get_career_suggestions %}
+        {% if careers %}
+        <h6 class="fw-bold mt-4 mb-2">💼 Kelajakdagi kasblar:</h6>
+        <div>
+            {% for career in careers %}
+            <span class="career-chip">{{ career }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+    {% endif %}
+
+    <!-- Natijalar -->
+    <div class="result-card mb-4">
+        <h4 class="fw-bold mb-4">📊 Barcha sohalardagi natijalar</h4>
+        {% with max_score=sorted_scores.0.1 %}
+        {% for name, score in sorted_scores %}
+        {% with cat=categories_map|default:name %}
+        <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold">
+                    {% if name in categories_map %}{{ categories_map|default:name }}{% else %}{{ name }}{% endif %}
+                    {% for cname, cat in categories_map.items %}
+                        {% if cname == name %}{{ cat.icon }}{% endif %}
+                    {% endfor %}
+                </span>
+                <span class="text-muted">{{ score }} ball</span>
+            </div>
+            <div class="score-bar">
+                {% if max_score > 0 %}
+                <div class="score-fill" style="width:{% widthratio score max_score 100 %}%;background:
+                    {% for cname, cat in categories_map.items %}{% if cname == name %}{{ cat.color }}{% endif %}{% endfor %}"></div>
+                {% endif %}
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+        {% endwith %}
+    </div>
+
+    <div class="d-flex gap-3 justify-content-center flex-wrap mb-5">
+        <a href="{% url 'edukids:interests_quiz' %}" class="btn btn-lg fw-bold px-4"
+           style="background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border:none;border-radius:30px;">
+            🔄 Qayta topshirish
+        </a>
+        <a href="{% url 'edukids:interests_home' %}" class="btn btn-lg btn-outline-secondary px-4">
+            ← Orqaga
+        </a>
+        <a href="{% url 'edukids:logic_home' %}" class="btn btn-lg px-4 fw-bold"
+           style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:white;border:none;border-radius:30px;">
+            🧠 Mantiqiy Mashqlar
+        </a>
+    </div>
+
+</div>
+</div>
+</div>
+{% endblock %}

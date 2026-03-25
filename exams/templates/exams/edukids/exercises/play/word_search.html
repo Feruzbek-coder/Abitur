@@ -1,0 +1,209 @@
+{% extends "exams/base.html" %}
+{% block title %}{{ exercise.title }} - So'z qidirish{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%) !important; min-height: 100vh; }
+    .game-wrapper { max-width: 900px; margin: 30px auto; padding: 0 15px; }
+    .main-card { background: white; border-radius: 25px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .grid-container { overflow-x: auto; }
+    .word-grid { display: inline-block; user-select: none; }
+    .grid-row { display: flex; }
+    .grid-cell {
+        width: 38px; height: 38px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 1rem; cursor: pointer;
+        border-radius: 6px; transition: all 0.15s;
+        border: 1px solid #e2e8f0; color: #334155;
+        background: #f8fafc;
+    }
+    .grid-cell:hover { background: #fef3c7; }
+    .grid-cell.selected { background: #fbbf24; color: white; }
+    .grid-cell.found { background: #22c55e; color: white; border-color: #22c55e; }
+    .word-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+    .word-tag { padding: 5px 14px; border-radius: 20px; font-weight: 600; background: #fef3c7; color: #92400e; font-size: 0.9rem; }
+    .word-tag.found { background: #dcfce7; color: #166534; text-decoration: line-through; }
+    .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .score-badge { background: linear-gradient(135deg, #f7971e, #ffd200); color: white; padding: 6px 18px; border-radius: 20px; font-weight: 700; }
+    .results-screen { text-align: center; padding: 20px 0; }
+    .results-circle { width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, #f7971e, #ffd200); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px auto; font-size: 2rem; font-weight: 900; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-wrapper">
+    <h4 class="text-white fw-bold mb-3 text-center">{{ exercise.title }}</h4>
+
+    {% if questions %}
+    <div class="main-card" id="gameCard">
+        <div class="score-header">
+            <div style="color: #d97706; font-weight: 700;">🔍 So'z qidirish</div>
+            <div class="score-badge">Topildi: <span id="foundCount">0</span> / <span id="totalWords">0</span></div>
+        </div>
+        <p class="text-muted mb-3">So'zlarni harflar jadvalidan toping. Birinchi va oxirgi harfni bosib ushlab teplating.</p>
+
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="grid-container">
+                    <div class="word-grid" id="wordGrid"></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h6 class="fw-bold mb-2">Qidiriladigan so'zlar:</h6>
+                <div class="word-list" id="wordList"></div>
+                <div class="mt-3" id="completeBtnArea" style="display:none;">
+                    <button onclick="finishGame()" class="btn btn-success w-100">✅ Natijani ko'rish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-card results-screen" id="resultsCard" style="display:none;">
+        <h2 style="color:#1e293b;">🎉 Bajarildi!</h2>
+        <div class="results-circle" id="resultCircle"></div>
+        <h4 id="resultText" class="text-muted mb-4"></h4>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <button onclick="location.reload()" class="btn btn-warning px-4">🔄 Qayta</button>
+            <a href="{% url 'edukids:exercises_index' %}" class="btn btn-outline-secondary px-4">← Mashqlar</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="main-card text-center py-5">
+        <h5>Savollar topilmadi</h5>
+        <a href="{% url 'edukids:exercises_index' %}" class="btn btn-primary mt-3">← Orqaga</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const questions = {{ questions_json|safe }};
+const q = questions[0];
+let grid = [];
+let hiddenWords = [];
+let foundWords = [];
+let selecting = false;
+let startCell = null;
+let selectedCells = [];
+const startTime = Date.now();
+
+function initGame() {
+    if (!q) return;
+    hiddenWords = q.hidden_words || [];
+    grid = q.word_grid || [];
+    document.getElementById('totalWords').textContent = hiddenWords.length;
+    renderGrid();
+    renderWordList();
+}
+
+function renderGrid() {
+    const container = document.getElementById('wordGrid');
+    container.innerHTML = '';
+    grid.forEach((row, r) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'grid-row';
+        row.forEach((letter, c) => {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.textContent = letter;
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            cell.addEventListener('mousedown', () => startSelect(r, c));
+            cell.addEventListener('mouseenter', () => continueSelect(r, c));
+            cell.addEventListener('mouseup', () => endSelect());
+            cell.addEventListener('touchstart', (e) => { e.preventDefault(); startSelect(r, c); });
+            cell.addEventListener('touchend', () => endSelect());
+            rowDiv.appendChild(cell);
+        });
+        container.appendChild(rowDiv);
+    });
+    document.addEventListener('mouseup', endSelect);
+}
+
+function renderWordList() {
+    const container = document.getElementById('wordList');
+    container.innerHTML = '';
+    hiddenWords.forEach(word => {
+        const tag = document.createElement('div');
+        tag.className = 'word-tag';
+        tag.id = 'word-' + word.toUpperCase();
+        tag.textContent = word.toUpperCase();
+        container.appendChild(tag);
+    });
+}
+
+function startSelect(r, c) {
+    selecting = true;
+    startCell = {r, c};
+    selectedCells = [{r, c}];
+    highlightSelected();
+}
+
+function continueSelect(r, c) {
+    if (!selecting || !startCell) return;
+    selectedCells = [];
+    const dr = Math.sign(r - startCell.r);
+    const dc = Math.sign(c - startCell.c);
+    const len = Math.max(Math.abs(r - startCell.r), Math.abs(c - startCell.c));
+    for (let i = 0; i <= len; i++) {
+        selectedCells.push({r: startCell.r + dr * i, c: startCell.c + dc * i});
+    }
+    highlightSelected();
+}
+
+function endSelect() {
+    if (!selecting) return;
+    selecting = false;
+    const word = selectedCells.map(({r, c}) => grid[r] && grid[r][c] ? grid[r][c] : '').join('').toUpperCase();
+    const wordRev = word.split('').reverse().join('');
+    const found = hiddenWords.find(w => w.toUpperCase() === word || w.toUpperCase() === wordRev);
+    if (found && !foundWords.includes(found.toUpperCase())) {
+        foundWords.push(found.toUpperCase());
+        selectedCells.forEach(({r, c}) => {
+            const cell = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+            if (cell) cell.classList.add('found');
+        });
+        const tag = document.getElementById('word-' + found.toUpperCase());
+        if (tag) tag.classList.add('found');
+        document.getElementById('foundCount').textContent = foundWords.length;
+        if (foundWords.length >= hiddenWords.length) {
+            document.getElementById('completeBtnArea').style.display = 'block';
+        }
+    } else {
+        clearSelected();
+    }
+    startCell = null;
+    selectedCells = [];
+}
+
+function highlightSelected() {
+    document.querySelectorAll('.grid-cell:not(.found)').forEach(c => c.classList.remove('selected'));
+    selectedCells.forEach(({r, c}) => {
+        const cell = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+        if (cell && !cell.classList.contains('found')) cell.classList.add('selected');
+    });
+}
+
+function clearSelected() {
+    document.querySelectorAll('.grid-cell:not(.found)').forEach(c => c.classList.remove('selected'));
+}
+
+function finishGame() {
+    document.getElementById('gameCard').style.display = 'none';
+    document.getElementById('resultsCard').style.display = 'block';
+    const total = hiddenWords.length * 10;
+    const score = foundWords.length * 10;
+    const pct = total > 0 ? Math.round(score / total * 100) : 0;
+    document.getElementById('resultCircle').innerHTML = pct + '%';
+    const msg = pct === 100 ? '🏆 Barcha so\'zlarni topdingiz!' : `${foundWords.length}/${hiddenWords.length} so'z topildi`;
+    document.getElementById('resultText').textContent = msg;
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    fetch('{% url "edukids:exercise_submit" exercise.id %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({score: score, total: total, time_spent: timeSpent})
+    });
+}
+
+initGame();
+</script>
+{% endblock %}

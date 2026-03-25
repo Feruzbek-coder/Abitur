@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "exams",  # <-- BU QATORNI QO‘SHING
+    "exams",
+    "edukids",
 ]
 
 MIDDLEWARE = [

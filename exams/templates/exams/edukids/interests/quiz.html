@@ -1,0 +1,327 @@
+{% extends "exams/base.html" %}
+{% block title %}Qiziqishlar Testi - EduKids{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #f8f0ff; }
+    .quiz-wrapper {
+        max-width: 700px; margin: 0 auto;
+    }
+    .quiz-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white; padding: 30px; border-radius: 20px;
+        margin-bottom: 30px; text-align: center;
+    }
+    .progress-bar-custom {
+        height: 10px; border-radius: 10px;
+        background: rgba(255,255,255,0.3);
+        overflow: hidden; margin-top: 15px;
+    }
+    .progress-fill {
+        height: 100%; border-radius: 10px;
+        background: white;
+        transition: width 0.4s ease;
+    }
+    .question-card {
+        background: white; border-radius: 20px;
+        padding: 35px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        display: none;
+    }
+    .question-card.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .option-btn {
+        display: block; width: 100%;
+        padding: 14px 20px; margin-bottom: 10px;
+        border: 2px solid #e2e8f0; border-radius: 12px;
+        background: white; cursor: pointer;
+        text-align: left; font-size: 1rem;
+        transition: all 0.2s;
+    }
+    .option-btn:hover { border-color: #f5576c; background: #fff0f5; }
+    .option-btn.selected { border-color: #f5576c; background: linear-gradient(135deg, #fff0f5, #fce7f3); font-weight: 600; }
+    .scale-group { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+    .scale-btn {
+        width: 55px; height: 55px; border-radius: 50%;
+        border: 2px solid #e2e8f0; background: white;
+        font-size: 1.1rem; font-weight: 700; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .scale-btn:hover { border-color: #f5576c; background: #fff0f5; }
+    .scale-btn.selected { border-color: #f5576c; background: linear-gradient(135deg,#f093fb,#f5576c); color:white; }
+    .nav-btns { display: flex; gap: 10px; margin-top: 25px; }
+    .btn-next {
+        background: linear-gradient(135deg,#f093fb,#f5576c);
+        color: white; border: none; border-radius: 30px;
+        padding: 12px 35px; font-size: 1rem; font-weight: 600;
+        cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-prev { background: #e2e8f0; border: none; border-radius: 30px; padding: 12px 25px; cursor: pointer; }
+    .age-input { width: 100px; text-align: center; font-size: 1.2rem; padding: 8px; border-radius: 10px; border: 2px solid #e2e8f0; }
+    .result-loading {
+        text-align: center; padding: 60px; display: none;
+    }
+    .spinner { width: 60px; height: 60px; border: 5px solid #f0e6ff; border-top-color: #f5576c; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-box {
+        background: white; border-radius: 20px; padding: 40px;
+        text-align: center; box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+        display: none;
+    }
+    .result-icon { font-size: 5rem; margin-bottom: 20px; }
+    .score-bar { height: 12px; border-radius: 8px; overflow: hidden; background: #f1f5f9; margin-bottom: 6px; }
+    .score-fill { height: 100%; border-radius: 8px; transition: width 0.8s ease; }
+    .career-chip { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 0.85rem; margin: 3px; background: #f0e6ff; color: #7C3AED; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+<div class="quiz-wrapper">
+
+    <!-- Header -->
+    <div class="quiz-header">
+        <h2 class="fw-bold mb-1">🌈 Qiziqishlarni Aniqlash Testi</h2>
+        <p class="mb-2 opacity-90">9–14 yoshli o'quvchilar uchun</p>
+        <div class="d-flex justify-content-between small opacity-80">
+            <span>Savol: <span id="q-current">1</span> / {{ questions|length }}</span>
+            <span id="q-pct">0%</span>
+        </div>
+        <div class="progress-bar-custom"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Yosh so'rash (birinchi) -->
+    <div class="question-card active" id="age-step">
+        <h4 class="fw-bold mb-2">Yoshingizni kiriting</h4>
+        <p class="text-muted mb-4">Bu test 9–14 yoshli o'quvchilar uchun mo'ljallangan.</p>
+        <div class="d-flex align-items-center gap-3">
+            <input type="number" id="age-input" class="age-input" min="9" max="14" value="12" placeholder="12">
+            <span class="text-muted">yosh</span>
+        </div>
+        <div class="nav-btns mt-4">
+            <button class="btn-next" onclick="startQuiz()">Boshlash →</button>
+        </div>
+    </div>
+
+    <!-- Savollar -->
+    {% for q in questions %}
+    <div class="question-card" id="q-{{ q.id }}" data-qid="{{ q.id }}" data-type="{{ q.question_type }}">
+        <div class="mb-1 text-muted small fw-bold">Savol {{ forloop.counter }} / {{ questions|length }}</div>
+        <h4 class="fw-bold mb-4">{{ q.question_text }}</h4>
+
+        {% if q.question_type == 'single' %}
+        <div class="options-group">
+            {% for opt in q.get_options %}
+            <button class="option-btn" data-qid="{{ q.id }}" data-idx="{{ forloop.counter0 }}" onclick="selectSingle(this)">
+                {{ opt.text }}
+            </button>
+            {% endfor %}
+        </div>
+
+        {% elif q.question_type == 'scale' %}
+        <p class="text-muted small">1 = Umuman yo'q | 5 = Juda ko'p</p>
+        <div class="scale-group">
+            {% for val in "12345" %}
+            <button class="scale-btn" data-qid="{{ q.id }}" data-val="{{ val }}" onclick="selectScale(this)">
+                {{ val }}
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="nav-btns">
+            <button class="btn-prev" onclick="prevQuestion()" {% if forloop.first %}style="display:none"{% endif %}>← Orqaga</button>
+            <button class="btn-next" id="next-{{ q.id }}" onclick="nextQuestion()" disabled>
+                {% if forloop.last %}Natijani Ko'rish ✅{% else %}Keyingisi →{% endif %}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Loading -->
+    <div class="result-loading" id="loading">
+        <div class="spinner"></div>
+        <p class="text-muted">Natijangiz hisoblanmoqda...</p>
+    </div>
+
+    <!-- Natija -->
+    <div class="result-box" id="result-box">
+        <div class="result-icon" id="res-icon">🌟</div>
+        <h3 class="fw-bold mb-2" id="res-title"></h3>
+        <p class="text-muted mb-4" id="res-desc"></p>
+
+        <div class="mb-4" id="scores-chart"></div>
+
+        <div class="mb-4" id="careers-block" style="display:none">
+            <h6 class="fw-bold mb-2">💼 Tavsiya etilgan kasblar:</h6>
+            <div id="careers-list"></div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+            <a href="{% url 'edukids:interests_home' %}" class="btn btn-outline-secondary">← Orqaga</a>
+            <button class="btn btn-primary" onclick="location.reload()">🔄 Qayta topshirish</button>
+        </div>
+        <div id="result-link-block" class="mt-3" style="display:none">
+            <a id="result-link" href="#" class="text-muted small">📌 Natijani saqlash</a>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<script>
+const questions = {{ questions_json|safe }};
+let currentIdx = -1; // -1 = age step
+let answers = {};
+let userAge = 12;
+
+const allCards = document.querySelectorAll('.question-card');
+
+function startQuiz() {
+    userAge = parseInt(document.getElementById('age-input').value) || 12;
+    document.getElementById('age-step').classList.remove('active');
+    currentIdx = 0;
+    showQuestion(0);
+    updateProgress();
+}
+
+function showQuestion(idx) {
+    allCards.forEach(c => c.classList.remove('active'));
+    const q = questions[idx];
+    document.getElementById('q-' + q.id).classList.add('active');
+    document.getElementById('q-current').textContent = idx + 1;
+    updateProgress();
+    // restore selection
+    restoreSelection(q, idx);
+}
+
+function restoreSelection(q, idx) {
+    const nextBtn = document.getElementById('next-' + q.id);
+    if (answers[q.id] !== undefined) {
+        nextBtn.disabled = false;
+        if (q.type === 'single') {
+            document.querySelectorAll(`.option-btn[data-qid="${q.id}"]`).forEach(btn => {
+                if (parseInt(btn.dataset.idx) === answers[q.id]) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        } else if (q.type === 'scale') {
+            document.querySelectorAll(`.scale-btn[data-qid="${q.id}"]`).forEach(btn => {
+                if (parseInt(btn.dataset.val) === answers[q.id]) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        }
+    } else {
+        nextBtn.disabled = true;
+    }
+}
+
+function selectSingle(btn) {
+    const qid = btn.dataset.qid;
+    document.querySelectorAll(`.option-btn[data-qid="${qid}"]`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    answers[qid] = parseInt(btn.dataset.idx);
+    document.getElementById('next-' + qid).disabled = false;
+}
+
+function selectScale(btn) {
+    const qid = btn.dataset.qid;
+    document.querySelectorAll(`.scale-btn[data-qid="${qid}"]`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    answers[qid] = parseInt(btn.dataset.val);
+    document.getElementById('next-' + qid).disabled = false;
+}
+
+function nextQuestion() {
+    if (currentIdx < questions.length - 1) {
+        currentIdx++;
+        showQuestion(currentIdx);
+    } else {
+        submitQuiz();
+    }
+}
+
+function prevQuestion() {
+    if (currentIdx > 0) {
+        currentIdx--;
+        showQuestion(currentIdx);
+    }
+}
+
+function updateProgress() {
+    const total = questions.length;
+    const done = currentIdx < 0 ? 0 : currentIdx + 1;
+    const pct = Math.round(done / total * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('q-pct').textContent = pct + '%';
+}
+
+function submitQuiz() {
+    allCards.forEach(c => c.classList.remove('active'));
+    document.getElementById('loading').style.display = 'block';
+
+    fetch("{% url 'edukids:interests_submit' %}", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+        body: JSON.stringify({answers: answers, age: userAge})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('loading').style.display = 'none';
+        showResult(data);
+    })
+    .catch(() => {
+        document.getElementById('loading').style.display = 'none';
+        alert('Xatolik yuz berdi. Iltimos qayta urinib ko\'ring.');
+    });
+}
+
+function showResult(data) {
+    const box = document.getElementById('result-box');
+    box.style.display = 'block';
+    document.getElementById('res-icon').textContent = data.top_icon || '🌟';
+    document.getElementById('res-title').textContent = '🎉 Sizning asosiy soha: ' + data.top_category;
+    document.getElementById('res-desc').textContent = data.description;
+
+    // Scores chart
+    const chart = document.getElementById('scores-chart');
+    chart.innerHTML = '<h6 class="fw-bold mb-3 text-start">📊 Natijalar:</h6>';
+    const maxScore = data.sorted_scores.length > 0 ? Math.max(...data.sorted_scores.map(s => s[1])) : 1;
+    data.sorted_scores.forEach(([name, score]) => {
+        const pct = maxScore > 0 ? Math.round(score / maxScore * 100) : 0;
+        const colors = ['#f093fb','#4facfe','#11998e','#f7971e','#ee0979','#7F00FF'];
+        const color = colors[data.sorted_scores.indexOf ? data.sorted_scores.findIndex(s=>s[0]===name) % colors.length : 0] || '#667eea';
+        chart.innerHTML += `
+        <div class="mb-2 text-start">
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold">${name}</span><span class="text-muted">${score} ball</span>
+            </div>
+            <div class="score-bar"><div class="score-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>`;
+    });
+
+    // Careers
+    if (data.careers && data.careers.length > 0) {
+        const clist = document.getElementById('careers-list');
+        clist.innerHTML = data.careers.map(c => `<span class="career-chip">${c}</span>`).join('');
+        document.getElementById('careers-block').style.display = 'block';
+    }
+
+    // Result link
+    if (data.result_id) {
+        const link = document.getElementById('result-link');
+        link.href = `/edukids/interests/result/${data.result_id}/`;
+        document.getElementById('result-link-block').style.display = 'block';
+    }
+
+    box.scrollIntoView({behavior: 'smooth'});
+}
+
+function getCsrf() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (el) return el.value;
+    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return cookie ? cookie.split('=')[1] : '';
+}
+</script>
+{% csrf_token %}
+{% endblock %}

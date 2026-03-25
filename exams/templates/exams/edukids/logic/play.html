@@ -1,0 +1,282 @@
+{% extends "exams/base.html" %}
+{% block title %}{{ exercise.title }} - Mantiqiy Mashq{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #f0f9ff; }
+    .play-header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white; padding: 30px; border-radius: 20px; margin-bottom: 30px;
+    }
+    .progress-bar-outer { height: 10px; border-radius: 10px; background: rgba(255,255,255,0.3); overflow: hidden; margin-top: 12px; }
+    .progress-bar-inner { height: 100%; border-radius: 10px; background: white; transition: width 0.4s; }
+    .q-card {
+        background: white; border-radius: 20px; padding: 35px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+        display: none; max-width: 680px; margin: 0 auto;
+    }
+    .q-card.active { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .opt-btn {
+        display: block; width: 100%; padding: 14px 20px; margin-bottom: 10px;
+        border: 2px solid #e2e8f0; border-radius: 12px;
+        background: white; text-align: left; cursor: pointer;
+        font-size: 1rem; transition: all 0.2s;
+    }
+    .opt-btn:hover { border-color: #4facfe; background: #ebf8ff; }
+    .opt-btn.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; font-weight: 600; }
+    .opt-btn.wrong { border-color: #ef4444; background: #fee2e2; color: #b91c1c; }
+    .opt-btn.disabled { pointer-events: none; }
+    .explanation-box {
+        background: #f0fdf4; border: 1px solid #86efac;
+        border-radius: 12px; padding: 15px; margin-top: 15px;
+        font-size: 0.95rem; display: none;
+    }
+    .hint-box {
+        background: #fffbeb; border: 1px solid #fcd34d;
+        border-radius: 12px; padding: 12px; margin-top: 10px;
+        font-size: 0.9rem; display: none;
+    }
+    .btn-action { border: none; border-radius: 30px; padding: 11px 28px; font-weight: 600; cursor: pointer; }
+    .btn-next-q { background: linear-gradient(135deg,#4facfe,#00f2fe); color: white; }
+    .btn-hint { background: #fef3c7; color: #92400e; font-size: 0.9rem; }
+    .result-panel { background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 4px 30px rgba(0,0,0,0.1); display: none; max-width: 680px; margin: 0 auto; }
+    .big-score { font-size: 4rem; font-weight: 900; }
+    .donut { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 2.5rem; }
+    .timer-badge { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 5px 15px; font-size: 0.9rem; }
+    .q-counter { font-size: 0.9rem; opacity: 0.85; margin-bottom: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Header -->
+    <div class="play-header position-relative">
+        <div class="timer-badge" id="timer">⏱ 0:00</div>
+        <h3 class="fw-bold mb-1">{{ exercise.icon }} {{ exercise.title }}</h3>
+        <p class="opacity-85 mb-2">{{ exercise.description }}</p>
+        <div class="d-flex justify-content-between small opacity-90">
+            <span>Savol: <span id="q-current">1</span> / {{ questions|length }}</span>
+            <span id="q-pct-text">0%</span>
+        </div>
+        <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progress-inner" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- Savollar -->
+    {% for q in questions %}
+    <div class="q-card {% if forloop.first %}active{% endif %}" id="qcard-{{ q.id }}"
+         data-qid="{{ q.id }}" data-correct="{{ q.correct_answer }}" data-points="{{ q.points }}">
+
+        <div class="q-counter">Savol {{ forloop.counter }} / {{ questions|length }}</div>
+        <h4 class="fw-bold mb-4">{{ q.question_text }}</h4>
+
+        <div class="options-area" id="opts-{{ q.id }}">
+            {% for opt in q.get_options %}
+            <button class="opt-btn" data-answer="{{ opt }}"
+                    onclick="selectAnswer('{{ q.id }}', '{{ opt|escapejs }}', this)">
+                {{ opt }}
+            </button>
+            {% empty %}
+            <!-- Matn kiritish javob -->
+            <input type="text" id="text-ans-{{ q.id }}" class="form-control mb-3" placeholder="Javobingizni kiriting...">
+            <button class="btn-action btn-next-q" onclick="submitTextAnswer('{{ q.id }}')">Tekshirish ✓</button>
+            {% endfor %}
+        </div>
+
+        {% if q.hint %}
+        <div class="mt-3">
+            <button class="btn-action btn-hint" onclick="showHint('{{ q.id }}')">💡 Maslahat</button>
+        </div>
+        <div class="hint-box" id="hint-{{ q.id }}">💡 {{ q.hint }}</div>
+        {% endif %}
+
+        {% if q.explanation %}
+        <div class="explanation-box" id="exp-{{ q.id }}">
+            ✅ <strong>Tushuntirish:</strong> {{ q.explanation }}
+        </div>
+        {% endif %}
+
+        <div class="mt-4" id="next-area-{{ q.id }}" style="display:none">
+            <button class="btn-action btn-next-q" onclick="nextQuestion()">
+                {% if forloop.last %}Natijani Ko'rish 🎉{% else %}Keyingisi →{% endif %}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Natija -->
+    <div class="result-panel" id="result-panel">
+        <div class="donut" id="result-donut">🎉</div>
+        <div class="big-score" id="result-score" style="color:#4facfe"></div>
+        <h3 class="fw-bold mt-2" id="result-badge-text"></h3>
+        <p class="text-muted" id="result-time"></p>
+
+        <div class="row g-3 mt-3 mb-4" id="stats-row">
+            <div class="col-4">
+                <div style="background:#dcfce7;border-radius:12px;padding:15px;">
+                    <div style="font-size:1.8rem;font-weight:800;color:#16a34a" id="correct-count">0</div>
+                    <div class="small text-muted">To'g'ri</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div style="background:#fee2e2;border-radius:12px;padding:15px;">
+                    <div style="font-size:1.8rem;font-weight:800;color:#dc2626" id="wrong-count">0</div>
+                    <div class="small text-muted">Xato</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div style="background:#dbeafe;border-radius:12px;padding:15px;">
+                    <div style="font-size:1.8rem;font-weight:800;color:#2563eb" id="total-points">0</div>
+                    <div class="small text-muted">Ball</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <a href="{% url 'edukids:logic_home' %}" class="btn btn-outline-secondary btn-lg">← Orqaga</a>
+            <button class="btn btn-lg fw-bold" onclick="location.reload()"
+                    style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:white;border:none;border-radius:30px;">
+                🔄 Qayta ishlash
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const questions = {{ questions_json|safe }};
+let currentIdx = 0;
+let score = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let totalPoints = 0;
+let startTime = Date.now();
+let timerInterval;
+
+// Timer
+timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    document.getElementById('timer').textContent = `⏱ ${m}:${s.toString().padStart(2,'0')}`;
+}, 1000);
+
+function selectAnswer(qid, answer, btn) {
+    const q = questions.find(q => String(q.id) === String(qid));
+    if (!q) return;
+
+    // Disable all options
+    document.querySelectorAll(`#opts-${qid} .opt-btn`).forEach(b => b.classList.add('disabled'));
+
+    const correct = String(q.correct).trim().toLowerCase();
+    const given = String(answer).trim().toLowerCase();
+    const isCorrect = correct === given;
+
+    btn.classList.add(isCorrect ? 'correct' : 'wrong');
+    if (!isCorrect) {
+        // Show correct
+        document.querySelectorAll(`#opts-${qid} .opt-btn`).forEach(b => {
+            if (b.dataset.answer.trim().toLowerCase() === correct) b.classList.add('correct');
+        });
+    }
+
+    if (isCorrect) {
+        score += q.points;
+        correctCount++;
+        totalPoints += q.points;
+    } else {
+        wrongCount++;
+    }
+
+    // Show explanation & next
+    const exp = document.getElementById('exp-' + qid);
+    if (exp) exp.style.display = 'block';
+    document.getElementById('next-area-' + qid).style.display = 'block';
+}
+
+function submitTextAnswer(qid) {
+    const input = document.getElementById('text-ans-' + qid);
+    if (!input) return;
+    const answer = input.value.trim();
+    const q = questions.find(q => String(q.id) === String(qid));
+    if (!q) return;
+    const isCorrect = answer.toLowerCase() === String(q.correct).trim().toLowerCase();
+    input.disabled = true;
+    input.classList.add(isCorrect ? 'border-success' : 'border-danger');
+    if (isCorrect) { score += q.points; correctCount++; totalPoints += q.points; }
+    else wrongCount++;
+    const exp = document.getElementById('exp-' + qid);
+    if (exp) exp.style.display = 'block';
+    document.getElementById('next-area-' + qid).style.display = 'block';
+}
+
+function showHint(qid) {
+    const hint = document.getElementById('hint-' + qid);
+    if (hint) hint.style.display = 'block';
+}
+
+function nextQuestion() {
+    const allCards = document.querySelectorAll('.q-card');
+    allCards[currentIdx].classList.remove('active');
+    currentIdx++;
+    if (currentIdx < questions.length) {
+        allCards[currentIdx].classList.add('active');
+        document.getElementById('q-current').textContent = currentIdx + 1;
+        const pct = Math.round((currentIdx) / questions.length * 100);
+        document.getElementById('progress-inner').style.width = pct + '%';
+        document.getElementById('q-pct-text').textContent = pct + '%';
+    } else {
+        showResult();
+    }
+}
+
+function showResult() {
+    clearInterval(timerInterval);
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+    const total = questions.length;
+    const pct = total > 0 ? Math.round(correctCount / total * 100) : 0;
+
+    document.querySelectorAll('.q-card').forEach(c => c.style.display = 'none');
+    const panel = document.getElementById('result-panel');
+    panel.style.display = 'block';
+
+    document.getElementById('result-score').textContent = pct + '%';
+    document.getElementById('correct-count').textContent = correctCount;
+    document.getElementById('wrong-count').textContent = wrongCount;
+    document.getElementById('total-points').textContent = totalPoints;
+
+    let badge = '';
+    let donut = '';
+    if (pct === 100) { badge = "Mukammal! 🏆"; donut = "🏆"; }
+    else if (pct >= 80) { badge = "A'lo! ⭐"; donut = "😎"; }
+    else if (pct >= 60) { badge = "Yaxshi! 👍"; donut = "😊"; }
+    else { badge = "Davom eting! 💪"; donut = "📚"; }
+    document.getElementById('result-badge-text').textContent = badge;
+    document.getElementById('result-donut').textContent = donut;
+
+    const m = Math.floor(timeSpent / 60);
+    const s = timeSpent % 60;
+    document.getElementById('result-time').textContent = `⏱ Vaqt: ${m}:${s.toString().padStart(2,'0')}`;
+
+    // Save result
+    fetch("{% url 'edukids:logic_submit' exercise.id %}", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+        body: JSON.stringify({score: correctCount, total: total, time_spent: timeSpent})
+    }).catch(() => {});
+
+    panel.scrollIntoView({behavior: 'smooth'});
+}
+
+function getCsrf() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (el) return el.value;
+    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return cookie ? cookie.split('=')[1] : '';
+}
+</script>
+{% csrf_token %}
+{% endblock %}

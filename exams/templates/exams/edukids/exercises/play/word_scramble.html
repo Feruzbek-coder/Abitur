@@ -1,0 +1,211 @@
+{% extends "exams/base.html" %}
+{% block title %}{{ exercise.title }} - Harflarni joylashtiring{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%) !important; min-height: 100vh; }
+    .game-wrapper { max-width: 700px; margin: 30px auto; padding: 0 15px; }
+    .main-card { background: white; border-radius: 25px; padding: 35px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .score-badge { background: linear-gradient(135deg, #ee0979, #ff6a00); color: white; padding: 6px 18px; border-radius: 20px; font-weight: 700; }
+    .question-num { color: #ee0979; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    .progress-bar-custom { height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+    .progress-fill { height: 100%; background: linear-gradient(135deg, #ee0979, #ff6a00); border-radius: 10px; transition: width 0.4s; }
+    .question-text { font-size: 1.1rem; color: #64748b; margin-bottom: 20px; }
+    .scrambled-letters { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 25px; }
+    .letter-tile {
+        width: 50px; height: 50px; border-radius: 10px; font-size: 1.4rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        background: #f8fafc; border: 2px solid #e2e8f0; color: #1e293b;
+        transition: all 0.2s; user-select: none;
+    }
+    .letter-tile:hover { background: #fee2e2; border-color: #ee0979; transform: translateY(-2px); }
+    .letter-tile.used { opacity: 0.3; pointer-events: none; }
+    .answer-area { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 58px; margin-bottom: 20px; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 8px; }
+    .answer-tile {
+        width: 50px; height: 50px; border-radius: 10px; font-size: 1.4rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        background: linear-gradient(135deg, #ee0979, #ff6a00); color: white;
+        border: 2px solid transparent;
+    }
+    .answer-tile.correct-tile { background: #22c55e; }
+    .answer-tile.wrong-tile { background: #ef4444; }
+    .feedback { text-align: center; padding: 12px; border-radius: 12px; font-weight: 600; margin-top: 5px; display: none; }
+    .correct-fb { background: #dcfce7; color: #166534; }
+    .wrong-fb { background: #fee2e2; color: #7f1d1d; }
+    .results-screen { text-align: center; padding: 20px 0; }
+    .results-circle { width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, #ee0979, #ff6a00); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px auto; font-size: 2rem; font-weight: 900; }
+    .hint-text { text-align: center; color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-wrapper">
+    <h4 class="text-white fw-bold mb-3 text-center">{{ exercise.title }}</h4>
+
+    <div class="main-card" id="gameCard">
+        <div class="score-header">
+            <div class="question-num" id="questionNum">1 / {{ questions|length }}</div>
+            <div class="score-badge">Ball: <span id="scoreDisplay">0</span></div>
+        </div>
+        <div class="progress-bar-custom">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+
+        <div id="questionText" class="question-text text-center"></div>
+        <div class="hint-text">Harflarga bosib so'z tuzing 👇</div>
+        <div class="answer-area" id="answerArea"></div>
+        <div class="scrambled-letters" id="scrambledLetters"></div>
+        <div class="feedback" id="feedback"></div>
+
+        <div class="d-flex gap-2 justify-content-center mt-2">
+            <button class="btn btn-outline-secondary px-3" onclick="clearAnswer()">🔄 Tozalash</button>
+            <button id="checkBtn" class="btn btn-primary px-4" onclick="checkAnswer()">Tekshirish ✓</button>
+            <button id="nextBtn" class="btn btn-outline-primary px-4" style="display:none;" onclick="nextQuestion()">Keyingi →</button>
+        </div>
+    </div>
+
+    <div class="main-card results-screen" id="resultsCard" style="display:none;">
+        <h2 style="color:#1e293b;">🎉 Bajarildi!</h2>
+        <div class="results-circle" id="resultCircle"></div>
+        <h4 id="resultText" class="text-muted mb-4"></h4>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <button onclick="restartGame()" class="btn btn-danger px-4">🔄 Qayta</button>
+            <a href="{% url 'edukids:exercises_index' %}" class="btn btn-outline-secondary px-4">← Mashqlar</a>
+        </div>
+    </div>
+</div>
+
+<script>
+const questions = {{ questions_json|safe }};
+let current = 0, score = 0, startTime = Date.now();
+let currentLetters = [];
+let answerLetters = [];
+let usedIndices = [];
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function showQuestion(idx) {
+    const q = questions[idx];
+    const total = questions.length;
+    document.getElementById('questionNum').textContent = (idx + 1) + ' / ' + total;
+    document.getElementById('progressFill').style.width = ((idx / total) * 100) + '%';
+    document.getElementById('questionText').textContent = q.question_text;
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('checkBtn').style.display = 'inline-block';
+    document.getElementById('nextBtn').style.display = 'none';
+    answerLetters = [];
+    usedIndices = [];
+    currentLetters = shuffle(q.correct_answer.toUpperCase().split(''));
+    renderLetters();
+    renderAnswer();
+}
+
+function renderLetters() {
+    const container = document.getElementById('scrambledLetters');
+    container.innerHTML = '';
+    currentLetters.forEach((letter, i) => {
+        const tile = document.createElement('div');
+        tile.className = 'letter-tile' + (usedIndices.includes(i) ? ' used' : '');
+        tile.textContent = letter;
+        tile.onclick = () => addLetter(letter, i, tile);
+        container.appendChild(tile);
+    });
+}
+
+function renderAnswer() {
+    const container = document.getElementById('answerArea');
+    container.innerHTML = '';
+    answerLetters.forEach((item, i) => {
+        const tile = document.createElement('div');
+        tile.className = 'answer-tile';
+        tile.textContent = item.letter;
+        tile.onclick = () => removeLetter(i, item.srcIdx);
+        container.appendChild(tile);
+    });
+}
+
+function addLetter(letter, srcIdx, tileEl) {
+    if (usedIndices.includes(srcIdx)) return;
+    answerLetters.push({letter, srcIdx});
+    usedIndices.push(srcIdx);
+    tileEl.classList.add('used');
+    renderAnswer();
+}
+
+function removeLetter(ansIdx, srcIdx) {
+    answerLetters.splice(ansIdx, 1);
+    usedIndices = usedIndices.filter(i => i !== srcIdx);
+    renderLetters();
+    renderAnswer();
+}
+
+function clearAnswer() {
+    answerLetters = [];
+    usedIndices = [];
+    renderLetters();
+    renderAnswer();
+}
+
+function checkAnswer() {
+    const q = questions[current];
+    const answer = answerLetters.map(a => a.letter).join('');
+    const correct = q.correct_answer.toUpperCase();
+    const fb = document.getElementById('feedback');
+    fb.style.display = 'block';
+    document.getElementById('checkBtn').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'inline-block';
+
+    if (answer === correct) {
+        fb.className = 'feedback correct-fb';
+        fb.textContent = '✅ To\'g\'ri! +' + q.points + ' ball';
+        score += q.points;
+        document.getElementById('scoreDisplay').textContent = score;
+        document.querySelectorAll('.answer-tile').forEach(t => t.classList.add('correct-tile'));
+    } else {
+        fb.className = 'feedback wrong-fb';
+        fb.textContent = '❌ Noto\'g\'ri! To\'g\'ri javob: ' + q.correct_answer;
+        document.querySelectorAll('.answer-tile').forEach(t => t.classList.add('wrong-tile'));
+    }
+}
+
+function nextQuestion() {
+    current++;
+    if (current < questions.length) showQuestion(current);
+    else showResults();
+}
+
+function showResults() {
+    document.getElementById('gameCard').style.display = 'none';
+    document.getElementById('resultsCard').style.display = 'block';
+    const total = questions.length * 10;
+    const pct = total > 0 ? Math.round(score / total * 100) : 0;
+    document.getElementById('resultCircle').innerHTML = pct + '%';
+    const msg = pct >= 80 ? '🏆 Ajoyib!' : pct >= 60 ? '👍 Yaxshi!' : '💪 Yana mashq!';
+    document.getElementById('resultText').textContent = msg;
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    fetch('{% url "edukids:exercise_submit" exercise.id %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({score: score, total: total, time_spent: timeSpent})
+    });
+}
+
+function restartGame() {
+    current = 0; score = 0; startTime = Date.now();
+    document.getElementById('scoreDisplay').textContent = 0;
+    document.getElementById('gameCard').style.display = 'block';
+    document.getElementById('resultsCard').style.display = 'none';
+    showQuestion(0);
+}
+
+if (questions.length > 0) showQuestion(0);
+</script>
+{% endblock %}

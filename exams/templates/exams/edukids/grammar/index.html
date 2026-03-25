@@ -1,0 +1,77 @@
+{% extends "exams/base.html" %}
+{% block title %}Grammar - EduKids{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-hero { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 50px 0 40px; border-radius: 0 0 30px 30px; margin-bottom: 30px; }
+    .topic-card { border-radius: 16px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.3s; }
+    .topic-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.13); }
+    .topic-card.completed { border-left: 4px solid #22c55e; }
+    .level-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .level-A1 { background: #dcfce7; color: #166534; }
+    .level-A2 { background: #fef3c7; color: #92400e; }
+    .level-B1 { background: #dbeafe; color: #1e40af; }
+    .level-B2 { background: #fce7f3; color: #9d174d; }
+    .level-section-title { font-size: 1.4rem; font-weight: 700; color: white; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 8px; margin: 30px 0 15px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero text-center">
+    <div class="container">
+        <h1 class="fw-bold">📖 Grammar</h1>
+        <p class="lead">Ingliz tili grammatikasini bosqichma-bosqich o'rganing</p>
+        <a href="{% url 'edukids:home' %}" class="btn btn-outline-light btn-sm">← EduKids</a>
+    </div>
+</section>
+
+<div class="container">
+    {% if topics %}
+        {% regroup topics by level as level_list %}
+        {% for level_group in level_list %}
+        <div class="level-section-title">
+            {% if level_group.grouper == 'A1' %}🟢 A1 - Boshlang'ich
+            {% elif level_group.grouper == 'A2' %}🟡 A2 - Elementar
+            {% elif level_group.grouper == 'B1' %}🔵 B1 - O'rta
+            {% elif level_group.grouper == 'B2' %}🟣 B2 - Yuqori o'rta
+            {% else %}📘 {{ level_group.grouper }}{% endif %}
+        </div>
+        <div class="row g-3 mb-3">
+            {% for topic in level_group.list %}
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="card topic-card h-100 {% if user_progress and topic.id in user_progress %}completed{% endif %}">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <span style="font-size: 2rem; margin-right: 10px;">{{ topic.icon }}</span>
+                            <div>
+                                <h6 class="fw-bold mb-0">{{ topic.title }}</h6>
+                                {% if topic.title_uz %}
+                                <small class="text-muted">{{ topic.title_uz }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="level-badge level-{{ topic.level }}">{{ topic.level }}</span>
+                            {% if user_progress and topic.id in user_progress %}
+                            <span class="badge bg-success">✅ Bajarildi</span>
+                            {% endif %}
+                        </div>
+                        {% if topic.description %}
+                        <p class="text-muted small mt-2 mb-2">{{ topic.description|truncatechars:60 }}</p>
+                        {% endif %}
+                        <a href="{% url 'edukids:grammar_topic_detail' topic.id %}" class="btn btn-primary btn-sm w-100 mt-2">O'qish →</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="text-center py-5">
+        <div style="font-size: 5rem;">📭</div>
+        <h4 class="text-white mt-3">Hozircha grammar mavzular yo'q</h4>
+        <a href="/admin/edukids/grammartopic/add/" class="btn btn-light mt-2">+ Mavzu qo'shish</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
